@@ -1,16 +1,11 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { drawFlight, makeStars, type Star } from "@/components/game/draw-flight"
+import { drawFlight, flightAccent, makeStars, type Star } from "@/components/game/draw-flight"
 import { displayMultiplier } from "@/lib/game/math"
 import { publishMultiplier } from "@/lib/game/ticker"
 import { flightPhrase } from "@/lib/format"
 import type { PublicRound } from "@/lib/game/types"
-
-function colorFor(status: PublicRound["status"] | "idle") {
-  if (status === "crashed") return "#ff5d73"
-  return "#ffffff"
-}
 
 function multiplierFor(round: PublicRound | null, estimated: number) {
   if (!round) return 1
@@ -68,11 +63,26 @@ export function FlightStage({
       const status = current?.status ?? "idle"
       publishMultiplier(multiplier)
       if (numberRef.current) {
-        numberRef.current.innerHTML = `${multiplier.toFixed(2)}<span style="color:#7ecbff">x</span>`
-        numberRef.current.style.color = colorFor(status)
+        const accent = flightAccent(multiplier, status === "crashed")
+        const mark = status === "crashed" ? accent.hex : status === "flying" ? accent.hex : "#7ecbff"
+        numberRef.current.innerHTML = `${multiplier.toFixed(2)}<span style="color:${mark}">x</span>`
+        numberRef.current.style.color = status === "flying" || status === "crashed" ? accent.hex : "#ffffff"
+        numberRef.current.style.textShadow =
+          status === "flying" || status === "crashed" ? `0 0 28px ${accent.rgba(0.55)}` : "none"
       }
       if (phraseRef.current) {
         phraseRef.current.textContent = flightPhrase(multiplier, status)
+        if (status === "flying") {
+          const accent = flightAccent(multiplier)
+          phraseRef.current.style.color = accent.hex
+          phraseRef.current.style.textShadow = `0 0 12px ${accent.rgba(0.55)}`
+        } else if (status === "crashed") {
+          phraseRef.current.style.color = "#ff5d73"
+          phraseRef.current.style.textShadow = "0 0 12px rgba(255,93,115,0.55)"
+        } else {
+          phraseRef.current.style.color = "#9fdfff"
+          phraseRef.current.style.textShadow = "0 0 12px rgba(126,203,255,0.55)"
+        }
       }
       if (countRef.current && current?.status === "betting" && estimated > 1_000_000_000_000) {
         const left = Math.max(0, new Date(current.bettingEndsAt).getTime() - estimated)
@@ -124,12 +134,12 @@ export function FlightStage({
           </p>
         )}
       </div>
-      <div className="absolute bottom-2 right-3 flex items-center gap-3 text-[11px] text-[#39ff14]">
-        <span className="inline-flex items-center gap-1">
+      <div className="absolute bottom-9 right-12 flex items-center gap-3 text-[11px] text-white/70">
+        <span className="inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[#39ff14]">
           <WifiIcon />
           234ms
         </span>
-        <span className="inline-flex items-center gap-1 text-white/75">
+        <span className="inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5">
           <UserIcon />
           {Math.max(players, 1)}
         </span>

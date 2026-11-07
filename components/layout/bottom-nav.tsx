@@ -24,7 +24,7 @@ function activeId(path: string) {
 }
 
 export function BottomNav() {
-  const path = usePathname()
+  const path = usePathname() ?? ""
   if (path.startsWith("/aviator")) return null
 
   const current = activeId(path)

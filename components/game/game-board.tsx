@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { BetPanel } from "@/components/game/bet-panel"
+import { CashoutFloats, useCashoutCrowd } from "@/components/game/cashout-floats"
 import { FlightStage } from "@/components/game/flight-stage"
 import { HistoryRail } from "@/components/game/history-rail"
 import { SetupNotice } from "@/components/game/setup-notice"
@@ -20,6 +21,11 @@ export function GameBoard() {
     return () => window.clearInterval(timer)
   }, [])
 
+  const { floats, inPlay: crowdInPlay, total: crowdTotal } = useCashoutCrowd({
+    round: state?.round ?? null,
+    liveBets: state?.liveBets ?? [],
+  })
+
   if (!state && (code === "config" || code === "schema")) {
     return (
       <div className="mx-auto max-w-lg px-4 py-10">
@@ -28,11 +34,8 @@ export function GameBoard() {
     )
   }
 
-  const players = state?.liveBets.length ?? 0
-  const online = Math.max(120, players * 3 + 80)
-  const watching = Math.max(online - 40, players + 100)
   const username = state?.me?.username ?? "Pilot"
-  const inPlay = state?.round.status === "flying"
+  const flying = state?.round.status === "flying"
 
   return (
     <div className="mx-auto flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-black text-white">
@@ -57,7 +60,7 @@ export function GameBoard() {
       </div>
 
       <div className="shrink-0 px-3 pb-2">
-        <HistoryRail history={state?.history ?? []} inPlay={inPlay} />
+        <HistoryRail history={state?.history ?? []} inPlay={flying} />
       </div>
 
       {message && code !== "config" && code !== "schema" && (
@@ -68,9 +71,10 @@ export function GameBoard() {
         <FlightStage
           round={state?.round ?? null}
           serverNow={state?.serverNow ?? null}
-          players={watching}
+          players={crowdInPlay}
           className="absolute inset-0"
         />
+        <CashoutFloats items={floats} />
 
         <div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex items-start justify-between gap-3 px-3">
           <div className="flex min-w-0 items-center gap-2">
@@ -87,7 +91,7 @@ export function GameBoard() {
         <div className="absolute left-3 top-[52px] z-10">
           <button type="button" className="inline-flex items-center gap-1.5 rounded-full bg-[#1b2230]/85 px-2.5 py-1 text-xs text-white backdrop-blur">
             <UsersIcon />
-            {players}/{online}
+            {crowdInPlay}/{crowdTotal}
             <span className="text-[#8b93a7]">›</span>
           </button>
         </div>

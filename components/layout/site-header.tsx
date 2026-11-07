@@ -17,7 +17,7 @@ export function SiteHeader({
   email: string | null
   username: string | null
 }) {
-  const path = usePathname()
+  const path = usePathname() ?? ""
   const router = useRouter()
   const { balance, setBalance } = useBalance()
   const [pending, setPending] = useState(false)

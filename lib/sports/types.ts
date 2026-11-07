@@ -33,6 +33,7 @@ export type SportsEvent = {
   status: EventStatus
   homeScore: number | null
   awayScore: number | null
+  minute?: number | null
   featured: boolean
   markets: Market[]
 }

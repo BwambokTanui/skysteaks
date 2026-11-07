@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { JetBrains_Mono, Outfit } from "next/font/google"
-import { AppShell } from "@/components/layout/app-shell"
-import { BalanceProvider } from "@/components/layout/balance"
-import { BetslipProvider } from "@/components/sports/betslip"
+import { Providers } from "@/components/layout/providers"
 import { getSessionContext } from "@/lib/auth"
 import "./globals.css"
 
@@ -29,17 +27,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body className={`${outfit.variable} ${mono.variable} flex min-h-dvh flex-col bg-[#07080b] font-sans text-white antialiased`}>
-        <BalanceProvider initial={session.profile?.balance ?? null}>
-          <BetslipProvider>
-            <AppShell
-              configured={session.configured}
-              email={session.user?.email ?? null}
-              username={session.profile?.username ?? null}
-            >
-              {children}
-            </AppShell>
-          </BetslipProvider>
-        </BalanceProvider>
+        <Providers
+          configured={session.configured}
+          email={session.user?.email ?? null}
+          username={session.profile?.username ?? null}
+          balance={session.profile?.balance ?? null}
+        >
+          {children}
+        </Providers>
       </body>
     </html>
   )

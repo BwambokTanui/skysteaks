@@ -1,62 +1,18 @@
 "use client"
 
 import Link from "next/link"
-import { createContext, useContext, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { useBalance } from "@/components/layout/balance"
+import { useBetslip } from "@/components/sports/betslip-context"
 import { Button, buttonClasses } from "@/components/ui/button"
 import { Notice } from "@/components/ui/notice"
 import { Panel } from "@/components/ui/panel"
 import { cn } from "@/lib/cn"
 import { money } from "@/lib/format"
 import { combineOdds, formatOdds } from "@/lib/sports/format"
-import type { BetslipItem } from "@/lib/sports/types"
 
-type BetslipContextValue = {
-  items: BetslipItem[]
-  open: boolean
-  setOpen: (value: boolean) => void
-  toggle: (item: BetslipItem) => void
-  remove: (selectionId: string) => void
-  clear: () => void
-  has: (selectionId: string) => boolean
-}
-
-const BetslipContext = createContext<BetslipContextValue | null>(null)
-
-export function BetslipProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<BetslipItem[]>([])
-  const [open, setOpen] = useState(false)
-
-  const value = useMemo<BetslipContextValue>(
-    () => ({
-      items,
-      open,
-      setOpen,
-      has: (selectionId) => items.some((item) => item.selectionId === selectionId),
-      clear: () => setItems([]),
-      remove: (selectionId) => setItems((current) => current.filter((item) => item.selectionId !== selectionId)),
-      toggle: (item) => {
-        setItems((current) => {
-          if (current.some((entry) => entry.selectionId === item.selectionId)) {
-            return current.filter((entry) => entry.selectionId !== item.selectionId)
-          }
-          const withoutEvent = current.filter((entry) => entry.eventId !== item.eventId)
-          return [...withoutEvent, item]
-        })
-        setOpen(true)
-      },
-    }),
-    [items, open],
-  )
-
-  return <BetslipContext.Provider value={value}>{children}</BetslipContext.Provider>
-}
-
-export function useBetslip() {
-  const context = useContext(BetslipContext)
-  if (!context) throw new Error("BetslipProvider is missing")
-  return context
-}
+const QUICK_STAKES = ["10", "20", "50", "100", "200", "500"]
 
 export function BetslipDock() {
   const { items, open, setOpen, remove, clear } = useBetslip()
@@ -65,6 +21,9 @@ export function BetslipDock() {
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [tone, setTone] = useState<"error" | "info">("error")
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const totalOdds = combineOdds(items.map((item) => item.odds))
   const stakeValue = Number(stake)
@@ -101,23 +60,24 @@ export function BetslipDock() {
     }
   }
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          "fixed bottom-[76px] right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--mint)] px-4 py-3 text-sm font-semibold text-black shadow-lg lg:hidden",
-          items.length === 0 && "opacity-80",
-        )}
-      >
-        Betslip
-        <span className="grid h-6 min-w-6 place-items-center rounded-full bg-black/15 px-1 font-mono text-xs">{items.length}</span>
-      </button>
+      {items.length > 0 && !open && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="fixed bottom-[calc(70px+env(safe-area-inset-bottom))] right-3 z-[70] inline-flex items-center gap-2 rounded-full bg-[var(--sporty)] px-4 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(227,27,35,0.45)] lg:bottom-6"
+        >
+          Betslip
+          <span className="grid h-6 min-w-6 place-items-center rounded-full bg-black/20 px-1.5 font-mono text-xs">{items.length}</span>
+        </button>
+      )}
 
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/55 transition lg:hidden",
+          "fixed inset-0 z-[80] bg-black/60 transition",
           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
         )}
         onClick={() => setOpen(false)}
@@ -125,22 +85,25 @@ export function BetslipDock() {
 
       <aside
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 max-h-[80vh] overflow-auto rounded-t-3xl border border-white/10 bg-[#0c0f14] p-4 transition lg:sticky lg:top-20 lg:inset-auto lg:z-10 lg:max-h-[calc(100vh-6rem)] lg:rounded-3xl lg:opacity-100 lg:translate-y-0",
-          open ? "translate-y-0" : "translate-y-full lg:translate-y-0",
+          "fixed inset-x-0 bottom-0 z-[90] max-h-[min(85vh,720px)] overflow-auto rounded-t-3xl border border-[var(--line)] bg-[var(--bg-elevated)] p-4 pb-[calc(18px+env(safe-area-inset-bottom))] shadow-[0_-16px_50px_rgba(0,0,0,0.5)] transition duration-300 lg:inset-x-auto lg:bottom-6 lg:right-6 lg:w-[380px] lg:rounded-2xl",
+          open ? "translate-y-0" : "translate-y-[110%] lg:translate-y-[120%]",
         )}
       >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/15 lg:hidden" />
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold tracking-[0.18em] text-[var(--muted)]">BETSLIP</p>
-            <h2 className="text-lg font-semibold">{items.length ? `${items.length} selection${items.length === 1 ? "" : "s"}` : "Empty"}</h2>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-[var(--sporty)]">BETSLIP</p>
+            <h2 className="text-lg font-semibold">
+              {items.length ? `${items.length} selection${items.length === 1 ? "" : "s"}` : "Empty"}
+            </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {items.length > 0 && (
               <button type="button" onClick={clear} className="text-sm text-[var(--muted)] hover:text-white">
                 Clear
               </button>
             )}
-            <button type="button" onClick={() => setOpen(false)} className="text-sm text-[var(--muted)] hover:text-white lg:hidden">
+            <button type="button" onClick={() => setOpen(false)} className="rounded-lg bg-white/8 px-3 py-1.5 text-sm text-white">
               Close
             </button>
           </div>
@@ -151,14 +114,14 @@ export function BetslipDock() {
             <Panel className="p-4 text-sm text-[var(--muted)]">Tap 1, X or 2 on a match to build a ticket.</Panel>
           )}
           {items.map((item) => (
-            <div key={item.selectionId} className="rounded-2xl border border-white/10 bg-black/25 p-3">
+            <div key={item.selectionId} className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs text-[var(--muted)]">{item.leagueName}</p>
-                  <p className="mt-1 text-sm">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">{item.leagueName}</p>
+                  <p className="mt-1 truncate text-sm font-medium">
                     {item.homeTeam} vs {item.awayTeam}
                   </p>
-                  <p className="mt-1 text-sm text-[var(--mint)]">
+                  <p className="mt-1 text-sm font-semibold text-[var(--sporty)]">
                     {item.selectionName} @ {formatOdds(item.odds)}
                   </p>
                 </div>
@@ -176,22 +139,42 @@ export function BetslipDock() {
               <span>Total odds</span>
               <span className="font-mono text-white">{formatOdds(totalOdds)}</span>
             </div>
-            <label className="grid gap-1.5 text-sm text-[var(--muted)]">
-              Stake
+
+            <div>
+              <p className="mb-2 text-sm text-[var(--muted)]">Stake</p>
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {QUICK_STAKES.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setStake(value)}
+                    className={cn(
+                      "rounded-lg border px-2.5 py-1.5 font-mono text-xs",
+                      stake === value || stake === `${value}.00`
+                        ? "border-[var(--sporty)] bg-[var(--sporty)] text-white"
+                        : "border-[var(--line)] bg-[var(--surface)] text-[var(--muted)]",
+                    )}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
               <input
                 value={stake}
                 onChange={(event) => setStake(event.target.value)}
                 inputMode="decimal"
-                className="h-12 rounded-2xl border border-white/10 bg-black/30 px-3 font-mono text-white outline-none focus:border-[var(--mint)]"
+                className="h-12 w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 font-mono text-white outline-none focus:border-[var(--sporty)]"
               />
-            </label>
+            </div>
+
             <div className="flex items-center justify-between text-sm">
               <span className="text-[var(--muted)]">Potential return</span>
               <span className="font-mono text-[var(--gold)]">{money(payout)}</span>
             </div>
+
             {balance != null ? (
               <Button type="button" size="lg" disabled={pending} onClick={place}>
-                Place ticket
+                {pending ? "Placing…" : "Place bet"}
               </Button>
             ) : (
               <Link href="/login" className={buttonClasses("primary", "lg")}>
@@ -207,6 +190,7 @@ export function BetslipDock() {
           </div>
         )}
       </aside>
-    </>
+    </>,
+    document.body,
   )
 }

@@ -8,14 +8,18 @@
 :root {
   color-scheme: dark;
   --bg: #07080b;
-  --surface: rgba(14, 16, 22, 0.9);
+  --bg-elevated: #0e1118;
+  --surface: #12161f;
+  --surface-2: #171c27;
+  --line: rgba(255, 255, 255, 0.08);
   --text: #f5f7fb;
-  --muted: #98a2b3;
+  --muted: #8b93a7;
   --mint: #39ff14;
   --gold: #f3c57b;
   --rose: #ff5d73;
   --blue: #7ecbff;
   --sporty: #e31b23;
+  --sporty-deep: #c8161d;
 }
 
 * {
@@ -60,4 +64,23 @@ input[type="range"]::-webkit-slider-thumb {
   height: 14px;
   border-radius: 999px;
   background: #39ff14;
+}
+
+@keyframes cashout-float-up {
+  0% {
+    opacity: 0;
+    transform: translate3d(-8px, 10px, 0) scale(0.96);
+  }
+  12% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(8px, -48px, 0) scale(1);
+  }
+}
+
+.cashout-float {
+  animation: cashout-float-up 2.35s ease-out forwards;
 }

@@ -3,6 +3,7 @@ import "server-only"
 import { hasServiceKey } from "@/lib/env"
 import { ConfigError, GameDataError } from "@/lib/game/errors"
 import { createServiceClient } from "@/lib/supabase/service"
+import { ingestLiveSportsFeed } from "@/lib/sports/ingest"
 import type { Market, Selection, Sport, SportsCatalog, SportsEvent, TicketSummary } from "@/lib/sports/types"
 
 type Row = Record<string, unknown>
@@ -43,22 +44,28 @@ async function ensureService() {
   return service
 }
 
+async function refreshLiveFeed() {
+  // Keep catalog responses snappy: ingest in parallel with reads when possible
+  return ingestLiveSportsFeed().catch(() => null)
+}
+
 export async function loadSportsCatalog(options?: {
   sport?: string | null
   live?: boolean
   featured?: boolean
 }): Promise<SportsCatalog> {
   const service = await ensureService()
+  await refreshLiveFeed()
 
   const [{ data: sportRows, error: sportError }, eventsQuery] = await Promise.all([
     service.from("sports").select("id, name, sort_order").order("sort_order"),
     (async () => {
       let query = service
         .from("events")
-        .select("id, league_id, home_team, away_team, kickoff_at, status, home_score, away_score, featured, leagues(id, name, sport_id, sports(id, name))")
+        .select("id, league_id, home_team, away_team, kickoff_at, status, home_score, away_score, minute, featured, leagues(id, name, sport_id, sports(id, name))")
         .neq("status", "settled")
         .order("kickoff_at", { ascending: true })
-        .limit(80)
+        .limit(100)
       if (options?.live) query = query.eq("status", "live")
       if (options?.featured) query = query.eq("featured", true)
       return query
@@ -131,6 +138,7 @@ export async function loadSportsCatalog(options?: {
       status: asStatus(row.status),
       homeScore: asNullableNumber(row.home_score),
       awayScore: asNullableNumber(row.away_score),
+      minute: asNullableNumber(row.minute),
       featured: Boolean(row.featured),
       markets: marketsByEvent.get(asString(row.id)) ?? [],
     }

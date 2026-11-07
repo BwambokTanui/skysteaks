@@ -12,6 +12,7 @@ export function useGameState() {
   const [message, setMessage] = useState<string | null>(null)
   const [code, setCode] = useState<Problem>(null)
   const stateRef = useRef<GameState | null>(null)
+  const inFlightRef = useRef(false)
 
   const apply = useCallback(
     (next: GameState) => {
@@ -25,21 +26,28 @@ export function useGameState() {
   )
 
   const refresh = useCallback(async () => {
-    const response = await fetch("/api/game/state", { cache: "no-store" })
-    const data = await response.json()
-    if (!response.ok) {
-      const nextCode = data.code === "config" || data.code === "schema" ? data.code : "error"
-      setMessage(data.message || "Unable to reach the table.")
-      setCode(nextCode)
-      return nextCode === "config" ? "halt" : null
+    if (inFlightRef.current) return stateRef.current
+    inFlightRef.current = true
+    try {
+      const response = await fetch("/api/game/state", { cache: "no-store" })
+      const data = await response.json()
+      if (!response.ok) {
+        const nextCode = data.code === "config" || data.code === "schema" ? data.code : "error"
+        setMessage(data.message || "Unable to reach the table.")
+        setCode(nextCode)
+        return nextCode === "config" ? "halt" : null
+      }
+      apply(data)
+      return data as GameState
+    } finally {
+      inFlightRef.current = false
     }
-    apply(data)
-    return data as GameState
   }, [apply])
 
   useEffect(() => {
     let stop = false
     let timer = 0
+
     const loop = async () => {
       if (!stop) {
         try {
@@ -54,13 +62,25 @@ export function useGameState() {
       }
       if (stop) return
       const hidden = document.hidden
-      const flying = stateRef.current?.round.status === "flying"
-      timer = window.setTimeout(loop, hidden ? 1500 : flying ? 350 : 700)
+      const status = stateRef.current?.round.status
+      // Keep every device on the same server round clock
+      const delay = hidden ? 1200 : status === "flying" ? 200 : status === "betting" ? 400 : 600
+      timer = window.setTimeout(loop, delay)
     }
+
+    const kick = () => {
+      if (document.hidden || stop) return
+      void refresh()
+    }
+
     void loop()
+    window.addEventListener("focus", kick)
+    document.addEventListener("visibilitychange", kick)
     return () => {
       stop = true
       window.clearTimeout(timer)
+      window.removeEventListener("focus", kick)
+      document.removeEventListener("visibilitychange", kick)
     }
   }, [refresh])
 
