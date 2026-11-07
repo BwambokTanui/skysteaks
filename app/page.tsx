@@ -1,11 +1,6 @@
-import type { Metadata } from "next"
 import { HomeLobby } from "@/components/lobby/home-lobby"
 import { isSchemaMessage } from "@/lib/game/errors"
 import { loadSportsCatalog } from "@/lib/sports/server"
-
-export const metadata: Metadata = {
-  title: "Sports & Aviator",
-}
 
 export const dynamic = "force-dynamic"
 
