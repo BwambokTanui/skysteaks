@@ -1,0 +1,14 @@
+---
+description: Always commit, push to GitHub, and deploy to Vercel when work is done
+alwaysApply: true
+---
+
+# Push and deploy when done
+
+When a task is finished (features, fixes, restyles):
+
+1. Commit relevant changes (no secrets; no Co-authored-by trailers).
+2. Push to `origin` (`main` unless on another branch).
+3. Deploy production with Vercel using the saved token from `C:\Users\tando\.skysteaks\credentials.env` (`npx vercel@latest --prod --yes --token …`).
+
+Do this by default at the end of completed work without waiting to be asked again. Production URL: https://skysteaks.vercel.app (and https://skysteaks.com when DNS is live).
