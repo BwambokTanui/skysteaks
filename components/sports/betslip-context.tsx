@@ -30,12 +30,13 @@ export function BetslipProvider({ children }: { children: ReactNode }) {
       toggle: (item) => {
         setItems((current) => {
           if (current.some((entry) => entry.selectionId === item.selectionId)) {
-            return current.filter((entry) => entry.selectionId !== item.selectionId)
+            const next = current.filter((entry) => entry.selectionId !== item.selectionId)
+            if (next.length === 0) setOpen(false)
+            return next
           }
           const withoutEvent = current.filter((entry) => entry.eventId !== item.eventId)
           return [...withoutEvent, item]
         })
-        setOpen(true)
       },
     }),
     [items, open],

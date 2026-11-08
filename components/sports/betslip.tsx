@@ -68,10 +68,15 @@ export function BetslipDock() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-[calc(68px+env(safe-area-inset-bottom))] right-3 z-[70] inline-flex items-center gap-2 rounded-full bg-[var(--sporty)] px-4 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(227,27,35,0.45)] lg:bottom-6"
+          className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-3 z-[70] grid h-14 w-14 place-items-center rounded-full bg-[var(--sporty)] text-white shadow-[0_12px_28px_rgba(227,27,35,0.45)] transition active:scale-95 lg:bottom-6"
+          aria-label={`Open betslip, ${items.length} selection${items.length === 1 ? "" : "s"}`}
         >
-          Betslip
-          <span className="grid h-6 min-w-6 place-items-center rounded-full bg-white/20 px-1.5 font-mono text-xs">{items.length}</span>
+          <span className="relative grid h-full w-full place-items-center">
+            <SlipIcon />
+            <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-white px-1 font-mono text-[11px] font-bold leading-none text-[var(--sporty)]">
+              {items.length}
+            </span>
+          </span>
         </button>
       )}
 
@@ -192,5 +197,14 @@ export function BetslipDock() {
       </aside>
     </>,
     document.body,
+  )
+}
+
+function SlipIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M7 4h10a1 1 0 0 1 1 1v15l-3-2-3 2-3-2-3 2V5a1 1 0 0 1 1-1Z" />
+      <path d="M9 8h6M9 12h6" />
+    </svg>
   )
 }
