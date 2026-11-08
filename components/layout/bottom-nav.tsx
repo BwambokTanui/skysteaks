@@ -30,8 +30,8 @@ export function BottomNav() {
   const current = activeId(path)
 
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(10px+env(safe-area-inset-bottom))]">
-      <div className="pointer-events-auto mx-auto flex h-[58px] max-w-md items-center justify-between rounded-full border border-[var(--line)] bg-white px-2 shadow-[0_12px_40px_rgba(15,23,42,0.14)]">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-white pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto flex h-14 max-w-lg items-stretch justify-between px-1">
         {items.map((item) => {
           const active = current === item.id
           return (
@@ -39,12 +39,20 @@ export function BottomNav() {
               key={item.id}
               href={item.href}
               className={cn(
-                "grid h-12 w-12 place-items-center rounded-full transition",
-                active ? "bg-[var(--sporty)] text-white shadow-[0_8px_18px_rgba(227,27,35,0.35)]" : "text-[var(--muted)]",
+                "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition",
+                active ? "text-[var(--sporty)]" : "text-[var(--muted)]",
               )}
               aria-label={item.label}
             >
-              <NavIcon id={item.id} active={active} />
+              <span
+                className={cn(
+                  "grid h-8 w-8 place-items-center rounded-xl transition",
+                  active && "bg-[#ffe8ea] text-[var(--sporty)]",
+                )}
+              >
+                <NavIcon id={item.id} />
+              </span>
+              <span>{item.label}</span>
             </Link>
           )
         })}
@@ -53,7 +61,7 @@ export function BottomNav() {
   )
 }
 
-function NavIcon({ id, active }: { id: (typeof items)[number]["id"]; active: boolean }) {
+function NavIcon({ id }: { id: (typeof items)[number]["id"] }) {
   if (id === "home") {
     return (
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -69,7 +77,7 @@ function NavIcon({ id, active }: { id: (typeof items)[number]["id"]; active: boo
     )
   }
   if (id === "games") {
-    return <PlaneIcon className={cn("h-5 w-5", active ? "text-white" : "")} />
+    return <PlaneIcon className="h-5 w-5" />
   }
   if (id === "bets") {
     return (

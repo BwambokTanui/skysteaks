@@ -68,7 +68,7 @@ export function BetslipDock() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] right-3 z-[70] inline-flex items-center gap-2 rounded-full bg-[var(--sporty)] px-4 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(227,27,35,0.45)] lg:bottom-6"
+          className="fixed bottom-[calc(68px+env(safe-area-inset-bottom))] right-3 z-[70] inline-flex items-center gap-2 rounded-full bg-[var(--sporty)] px-4 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(227,27,35,0.45)] lg:bottom-6"
         >
           Betslip
           <span className="grid h-6 min-w-6 place-items-center rounded-full bg-white/20 px-1.5 font-mono text-xs">{items.length}</span>
