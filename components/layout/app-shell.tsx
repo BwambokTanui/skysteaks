@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { usePathname } from "next/navigation"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { SiteHeader } from "@/components/layout/site-header"
@@ -22,7 +23,9 @@ export function AppShell({
 
   return (
     <>
-      <SiteHeader configured={configured} email={email} username={username} />
+      <Suspense fallback={null}>
+        <SiteHeader configured={configured} email={email} username={username} />
+      </Suspense>
       <main className={cn("flex-1", !aviator && "pb-[calc(56px+env(safe-area-inset-bottom))]")}>{children}</main>
       <BottomNav />
       {!aviator && <BetslipDock />}
