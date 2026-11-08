@@ -7,15 +7,13 @@ import { cn } from "@/lib/cn"
 
 const items = [
   { href: "/", label: "Home", id: "home" },
-  { href: "/sports", label: "Sports", id: "sports" },
   { href: "/games", label: "Games", id: "games" },
   { href: "/account", label: "Bets", id: "bets" },
   { href: "/account", label: "Me", id: "me" },
 ] as const
 
 function activeId(path: string) {
-  if (path === "/") return "home"
-  if (path.startsWith("/sports")) return "sports"
+  if (path === "/" || path.startsWith("/sports")) return "home"
   if (path === "/games" || path === "/fairness") return "games"
   if (path.startsWith("/aviator")) return "games"
   if (path === "/account") return "bets"
@@ -66,13 +64,6 @@ function NavIcon({ id }: { id: (typeof items)[number]["id"] }) {
     return (
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
         <path d="M12 3.2 3.5 10.2V21h6.2v-6.2h4.6V21h6.2V10.2L12 3.2Z" />
-      </svg>
-    )
-  }
-  if (id === "sports") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M4 7h16M4 12h16M4 17h10" />
       </svg>
     )
   }

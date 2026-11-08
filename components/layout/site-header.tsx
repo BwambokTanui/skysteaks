@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useBalance } from "@/components/layout/balance"
 import { cn } from "@/lib/cn"
@@ -18,6 +18,7 @@ export function SiteHeader({
   username: string | null
 }) {
   const path = usePathname() ?? ""
+  const search = useSearchParams()
   const router = useRouter()
   const { balance, setBalance } = useBalance()
   const [pending, setPending] = useState(false)
@@ -38,10 +39,10 @@ export function SiteHeader({
   }
 
   const categories = [
-    { href: "/games", label: "Games", match: (p: string) => p === "/games" },
-    { href: "/aviator", label: "Aviator", match: (p: string) => p.startsWith("/aviator") },
-    { href: "/sports/football", label: "Football", match: (p: string) => p.startsWith("/sports/football") },
-    { href: "/sports?live=1", label: "Live", match: (p: string) => p.includes("live=1") },
+    { href: "/games", label: "Games", active: path === "/games" },
+    { href: "/aviator", label: "Aviator", active: path.startsWith("/aviator") },
+    { href: "/?sport=football", label: "Football", active: path === "/" && search.get("sport") === "football" && search.get("live") !== "1" },
+    { href: "/?live=1", label: "Live", active: path === "/" && search.get("live") === "1" },
   ]
 
   return (
@@ -57,9 +58,9 @@ export function SiteHeader({
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/sports"
+            href="/"
             className="grid h-9 w-9 place-items-center rounded-full bg-[var(--bg-elevated)] text-[var(--muted)]"
-            aria-label="Search sports"
+            aria-label="Home sportsbook"
           >
             <SearchIcon />
           </Link>
@@ -88,21 +89,18 @@ export function SiteHeader({
 
       <div className="mx-auto max-w-lg px-3 pb-3">
         <div className="scroll-thin flex gap-2 overflow-x-auto">
-          {categories.map((link) => {
-            const isActive = link.match(path)
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition",
-                  isActive ? "bg-[var(--sporty)] text-white shadow-[0_8px_18px_rgba(227,27,35,0.28)]" : "bg-[var(--bg-elevated)] text-[var(--text)]",
-                )}
-              >
-                {link.label}
-              </Link>
-            )
-          })}
+          {categories.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition",
+                link.active ? "bg-[var(--sporty)] text-white shadow-[0_8px_18px_rgba(227,27,35,0.28)]" : "bg-[var(--bg-elevated)] text-[var(--text)]",
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
       </div>
     </header>
