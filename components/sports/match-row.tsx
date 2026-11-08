@@ -39,7 +39,7 @@ export function MatchRow({ event }: { event: SportsEvent }) {
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className={`mt-3 grid gap-2 ${selections.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
             {selections.map((selection) => (
               <OddsButton
                 key={selection.id}

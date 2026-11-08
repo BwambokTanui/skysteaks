@@ -135,6 +135,37 @@ begin
     ('atp', 'tennis', 'ATP Tour', 'World', 1)
   on conflict (id) do update set name = excluded.name, country = excluded.country, sort_order = excluded.sort_order;
 
+  -- Always ensure at least one open/live card per sport so empty leagues never look broken.
+  if not exists (select 1 from public.events e join public.leagues l on l.id = e.league_id where l.sport_id = 'basketball' and e.status <> 'settled') then
+    insert into public.events (league_id, home_team, away_team, kickoff_at, status, featured, external_id, home_score, away_score, minute)
+    values
+      ('nba', 'Lakers', 'Celtics', clock_timestamp() + interval '90 minutes', 'open', true, 'seed-nba-lakers-celtics', 0, 0, null),
+      ('nba', 'Heat', 'Bucks', clock_timestamp() - interval '35 minutes', 'live', true, 'seed-nba-heat-bucks', 78, 74, 36);
+    insert into public.markets (event_id, key, name)
+      select id, '1x2', 'Match Winner' from public.events where external_id in ('seed-nba-lakers-celtics', 'seed-nba-heat-bucks');
+    insert into public.selections (market_id, key, name, odds)
+      select m.id, x.key, x.name, x.odds
+      from public.markets m
+      join public.events e on e.id = m.event_id
+      cross join (values ('1','1',1.90), ('2','2',1.95)) as x(key, name, odds)
+      where e.external_id in ('seed-nba-lakers-celtics', 'seed-nba-heat-bucks');
+  end if;
+
+  if not exists (select 1 from public.events e join public.leagues l on l.id = e.league_id where l.sport_id = 'tennis' and e.status <> 'settled') then
+    insert into public.events (league_id, home_team, away_team, kickoff_at, status, featured, external_id, home_score, away_score)
+    values
+      ('atp', 'Djokovic', 'Alcaraz', clock_timestamp() + interval '70 minutes', 'open', true, 'seed-atp-djokovic-alcaraz', 0, 0),
+      ('atp', 'Swiatek', 'Gauff', clock_timestamp() - interval '40 minutes', 'live', true, 'seed-wta-swiatek-gauff', 1, 0);
+    insert into public.markets (event_id, key, name)
+      select id, '1x2', 'Match Winner' from public.events where external_id in ('seed-atp-djokovic-alcaraz', 'seed-wta-swiatek-gauff');
+    insert into public.selections (market_id, key, name, odds)
+      select m.id, x.key, x.name, x.odds
+      from public.markets m
+      join public.events e on e.id = m.event_id
+      cross join (values ('1','1',1.90), ('2','2',1.95)) as x(key, name, odds)
+      where e.external_id in ('seed-atp-djokovic-alcaraz', 'seed-wta-swiatek-gauff');
+  end if;
+
   if exists (select 1 from public.events limit 1) then
     return;
   end if;

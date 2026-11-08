@@ -1,7 +1,7 @@
 import "server-only"
 
 import { createServiceClient } from "@/lib/supabase/service"
-import { fetchLiveFootballFeed, oddsForMatch } from "@/lib/sports/provider"
+import { fetchAllSportsFeed, oddsForMatch, type SportId } from "@/lib/sports/provider"
 
 function slug(value: string) {
   return value
@@ -9,6 +9,12 @@ function slug(value: string) {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_|_$/g, "")
     .slice(0, 48)
+}
+
+const SPORT_META: Record<SportId, { name: string; sort: number }> = {
+  football: { name: "Football", sort: 1 },
+  basketball: { name: "Basketball", sort: 2 },
+  tennis: { name: "Tennis", sort: 3 },
 }
 
 let lastIngestAt = 0
@@ -23,18 +29,21 @@ export async function ingestLiveSportsFeed(force = false) {
   const service = createServiceClient()
   if (!service) return { ok: false as const, count: 0, skipped: false as const }
 
-  const matches = await fetchLiveFootballFeed()
+  const matches = await fetchAllSportsFeed()
   if (!matches.length) return { ok: false as const, count: 0, skipped: false as const }
 
   lastIngestAt = now
-  await service.from("sports").upsert({ id: "football", name: "Football", sort_order: 1 })
+
+  for (const [id, meta] of Object.entries(SPORT_META)) {
+    await service.from("sports").upsert({ id, name: meta.name, sort_order: meta.sort })
+  }
 
   let count = 0
   for (const match of matches) {
-    const leagueId = `ext_${slug(match.leagueName) || "football"}`
+    const leagueId = `ext_${match.sportId}_${slug(match.leagueName) || match.sportId}`
     await service.from("leagues").upsert({
       id: leagueId,
-      sport_id: "football",
+      sport_id: match.sportId,
       name: match.leagueName,
       country: "",
       sort_order: 50,
@@ -75,21 +84,30 @@ export async function ingestLiveSportsFeed(force = false) {
     if (marketExisting?.id) {
       marketId = marketExisting.id as string
     } else {
+      const marketName = match.sportId === "football" ? "Match Result" : "Match Winner"
       const { data: marketCreated } = await service
         .from("markets")
-        .insert({ event_id: eventId, key: "1x2", name: "Match Result" })
+        .insert({ event_id: eventId, key: "1x2", name: marketName })
         .select("id")
         .single()
       marketId = marketCreated?.id as string | undefined
     }
     if (!marketId) continue
 
-    const odds = oddsForMatch(match.homeScore, match.awayScore, match.status)
-    for (const row of [
-      { key: "1", name: "1", odds: odds.home },
-      { key: "x", name: "X", odds: odds.draw },
-      { key: "2", name: "2", odds: odds.away },
-    ]) {
+    const allowDraw = match.sportId === "football"
+    const odds = oddsForMatch(match.homeScore, match.awayScore, match.status, allowDraw)
+    const rows = allowDraw
+      ? [
+          { key: "1", name: "1", odds: odds.home },
+          { key: "x", name: "X", odds: odds.draw ?? 3.2 },
+          { key: "2", name: "2", odds: odds.away },
+        ]
+      : [
+          { key: "1", name: "1", odds: odds.home },
+          { key: "2", name: "2", odds: odds.away },
+        ]
+
+    for (const row of rows) {
       const { data: selection } = await service
         .from("selections")
         .select("id")
