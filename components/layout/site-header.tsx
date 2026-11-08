@@ -12,10 +12,12 @@ export function SiteHeader({
   configured,
   email,
   username,
+  isAdmin = false,
 }: {
   configured: boolean
   email: string | null
   username: string | null
+  isAdmin?: boolean
 }) {
   const path = usePathname() ?? ""
   const search = useSearchParams()
@@ -64,6 +66,11 @@ export function SiteHeader({
           >
             <SearchIcon />
           </Link>
+          {isAdmin && (
+            <Link href="/admin" className="rounded-full bg-[#111827] px-3 py-1.5 text-xs font-semibold text-white">
+              Admin
+            </Link>
+          )}
           {signedIn ? (
             <Link
               href="/account"

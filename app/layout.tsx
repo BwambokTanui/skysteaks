@@ -32,6 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           email={session.user?.email ?? null}
           username={session.profile?.username ?? null}
           balance={session.profile?.balance ?? null}
+          isAdmin={session.profile?.isAdmin ?? false}
         >
           {children}
         </Providers>

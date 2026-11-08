@@ -11,24 +11,27 @@ export function AppShell({
   configured,
   email,
   username,
+  isAdmin = false,
   children,
 }: {
   configured: boolean
   email: string | null
   username: string | null
+  isAdmin?: boolean
   children: React.ReactNode
 }) {
   const path = usePathname() ?? ""
   const aviator = path.startsWith("/aviator")
+  const admin = path.startsWith("/admin")
 
   return (
     <>
       <Suspense fallback={null}>
-        <SiteHeader configured={configured} email={email} username={username} />
+        <SiteHeader configured={configured} email={email} username={username} isAdmin={isAdmin} />
       </Suspense>
-      <main className={cn("flex-1", !aviator && "pb-[calc(56px+env(safe-area-inset-bottom))]")}>{children}</main>
-      <BottomNav />
-      {!aviator && <BetslipDock />}
+      <main className={cn("flex-1", !aviator && !admin && "pb-[calc(56px+env(safe-area-inset-bottom))]")}>{children}</main>
+      {!admin && <BottomNav />}
+      {!aviator && !admin && <BetslipDock />}
     </>
   )
 }

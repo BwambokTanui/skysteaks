@@ -16,7 +16,7 @@ export async function getSessionContext() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, balance")
+    .select("username, balance, is_admin")
     .eq("id", data.user.id)
     .maybeSingle()
 
@@ -24,7 +24,11 @@ export async function getSessionContext() {
     configured: true,
     user: { id: data.user.id, email: data.user.email ?? "" },
     profile: profile
-      ? { username: String(profile.username), balance: Number(profile.balance) }
+      ? {
+          username: String(profile.username),
+          balance: Number(profile.balance),
+          isAdmin: Boolean((profile as { is_admin?: boolean }).is_admin),
+        }
       : null,
   }
 }
