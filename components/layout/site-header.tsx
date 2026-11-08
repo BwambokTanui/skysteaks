@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useBalance } from "@/components/layout/balance"
 import { cn } from "@/lib/cn"
-import { ksh } from "@/lib/format"
+import { usd } from "@/lib/format"
 import { createClient } from "@/lib/supabase/client"
 
 export function SiteHeader({
@@ -76,7 +76,7 @@ export function SiteHeader({
               href="/account"
               className="inline-flex items-center rounded-full bg-[var(--bg-elevated)] px-3 py-1.5 text-sm font-semibold text-[var(--text)]"
             >
-              {balance == null ? "KSh —" : ksh(balance)}
+              {balance == null ? "USD —" : usd(balance)}
             </Link>
           ) : (
             <Link

@@ -9,7 +9,7 @@ import { HistoryRail } from "@/components/game/history-rail"
 import { SetupNotice } from "@/components/game/setup-notice"
 import { useGameState } from "@/components/game/use-game-state"
 import { useBalance } from "@/components/layout/balance"
-import { formatClock, ksh } from "@/lib/format"
+import { formatClock, usd } from "@/lib/format"
 
 export function GameBoard() {
   const { state, message, code, apply } = useGameState()
@@ -38,30 +38,49 @@ export function GameBoard() {
   const flying = state?.round.status === "flying"
 
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-black text-white">
-      <header className="flex h-11 shrink-0 items-center justify-between bg-[#e31b23] px-3">
-        <Link href="/games" className="grid h-8 w-8 place-items-center text-2xl font-light leading-none text-white" aria-label="Close">
+    <div className="mx-auto flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-[#07090e] text-white">
+      <header className="flex h-12 shrink-0 items-center justify-between bg-[linear-gradient(90deg,#c8161d,#e31b23_55%,#ff4d55)] px-3 shadow-[0_8px_24px_rgba(227,27,35,0.35)]">
+        <Link href="/games" className="grid h-9 w-9 place-items-center rounded-full bg-black/15 text-2xl font-light leading-none" aria-label="Close">
           ×
         </Link>
-        <h1 className="text-[17px] font-semibold tracking-wide">Aviator</h1>
-        <span className="w-8" />
+        <div className="text-center">
+          <p className="text-[10px] font-semibold tracking-[0.22em] text-white/80">SKYSTEAKS</p>
+          <h1 className="text-[17px] font-bold tracking-wide">Aviator</h1>
+        </div>
+        <Link href="/wallet/history" className="grid h-9 w-9 place-items-center rounded-full bg-black/15" aria-label="Deposit history">
+          <HistoryIcon />
+        </Link>
       </header>
 
-      <div className="flex shrink-0 items-center justify-between gap-3 bg-black px-3 py-2.5">
-        <div className="flex items-center gap-2 text-[15px] font-semibold">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/5 bg-[#0c1018] px-3 py-2.5">
+        <Link
+          href="/wallet?tab=withdraw"
+          className="inline-flex items-center gap-2 rounded-full bg-[#121826] px-3 py-1.5 ring-1 ring-[#39ff14]/25 transition hover:bg-[#172033]"
+        >
           <WalletIcon />
-          <span>{balance == null ? "KSh —" : ksh(balance)}</span>
-        </div>
-        <div className="flex items-center gap-3 text-[#9aa3b5]">
-          <TurboMark />
-          <SpeakerIcon />
-          <SettingsIcon />
+          <span className="font-mono text-[15px] font-bold text-[#9dffb0]">{balance == null ? "USD —" : usd(balance)}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-[#6f7b91]">Withdraw</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/wallet?tab=deposit"
+            className="rounded-full bg-[var(--sporty)] px-3 py-1.5 text-xs font-bold text-white shadow-[0_8px_18px_rgba(227,27,35,0.35)]"
+          >
+            Deposit
+          </Link>
+          <Link href="/fairness" className="grid h-8 w-8 place-items-center rounded-full bg-[#121826] text-[#9aa3b5]" aria-label="Fairness">
+            <SettingsIcon />
+          </Link>
         </div>
       </div>
 
-      <div className="shrink-0 px-3 pb-2">
+      <Link href="/wallet/history" className="block shrink-0 border-b border-white/5 bg-[#0a0d14] px-3 py-2 transition hover:bg-[#10151f]">
+        <div className="mb-1 flex items-center justify-between">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7d879a]">Round history · tap for wallet history</p>
+          <span className="text-[10px] font-semibold text-[#e31b23]">Open ›</span>
+        </div>
         <HistoryRail history={state?.history ?? []} inPlay={flying} />
-      </div>
+      </Link>
 
       {message && code !== "config" && code !== "schema" && (
         <p className="shrink-0 bg-[#2a1216] px-3 py-2 text-xs text-[#ff5d73]">{message}</p>
@@ -78,12 +97,12 @@ export function GameBoard() {
 
         <div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex items-start justify-between gap-3 px-3">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#1b2433] ring-2 ring-[#3d4a63]">
+            <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#1b2433] ring-2 ring-[#e31b23]/50">
               <RankBadge />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium drop-shadow">{username}</p>
-              <p className="text-[11px] text-[#b7becc] drop-shadow">Flights until next rank: 41</p>
+              <p className="truncate text-sm font-semibold drop-shadow">{username}</p>
+              <p className="text-[11px] text-[#b7becc] drop-shadow">Online · USD table</p>
             </div>
           </div>
         </div>
@@ -92,18 +111,17 @@ export function GameBoard() {
           <button type="button" className="inline-flex items-center gap-1.5 rounded-full bg-[#1b2230]/85 px-2.5 py-1 text-xs text-white backdrop-blur">
             <UsersIcon />
             {crowdInPlay}/{crowdTotal}
-            <span className="text-[#8b93a7]">›</span>
           </button>
         </div>
       </div>
 
-      <div className="shrink-0 space-y-2 bg-[#0a0c10] px-2.5 pb-1 pt-2">
+      <div className="shrink-0 space-y-2 border-t border-white/5 bg-[#080b11] px-2.5 pb-1 pt-2">
         <BetPanel slot={0} state={state} onState={apply} />
         <BetPanel slot={1} state={state} onState={apply} />
       </div>
 
       <div className="flex shrink-0 items-center justify-between px-3 py-2 text-[10px] text-[#6b7280]">
-        <span>SkySteaks · Aviator</span>
+        <span>SkySteaks · USD</span>
         <span>{clock}</span>
       </div>
     </div>
@@ -118,19 +136,11 @@ function WalletIcon() {
   )
 }
 
-function TurboMark() {
-  return (
-    <span className="grid h-6 w-6 place-items-center rounded-full bg-[linear-gradient(135deg,#5b8cff,#7ef0ff)] text-[8px] font-black text-[#071018]">
-      TU
-    </span>
-  )
-}
-
-function SpeakerIcon() {
+function HistoryIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 10v4h3l5 4V6l-5 4H4Z" />
-      <path d="m17 10 4 4M21 10l-4 4" />
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l2.5 2.5" />
     </svg>
   )
 }
@@ -153,7 +163,7 @@ function UsersIcon() {
 
 function RankBadge() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#9eb6ff]" fill="currentColor">
+    <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#ff8d96]" fill="currentColor">
       <path d="M12 2 4.5 6v5.5c0 5 3.4 8.7 7.5 10 4.1-1.3 7.5-5 7.5-10V6L12 2Zm0 4.2 1.4 2.8 3.1.3-2.4 2.1.7 3-2.8-1.6-2.8 1.6.7-3-2.4-2.1 3.1-.3L12 6.2Z" />
     </svg>
   )

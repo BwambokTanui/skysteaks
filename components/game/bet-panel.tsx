@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useMemo, useState, useSyncExternalStore } from "react"
 import { useBalance } from "@/components/layout/balance"
-import { ksh, signedMoney } from "@/lib/format"
+import { signedMoney, usd } from "@/lib/format"
 import { getMultiplier, subscribeMultiplier } from "@/lib/game/ticker"
 import type { GameState } from "@/lib/game/types"
 
@@ -79,7 +79,7 @@ export function BetPanel({
         <div className="grid gap-1.5">
           {showAmount && tooLow && (
             <div className="relative z-10 w-fit rounded-md bg-[#2c3340] px-2 py-1 text-[10px] text-white">
-              Minimum amount is KSh 10
+              Minimum amount is USD 10
               <span className="absolute -bottom-1 left-5 h-2 w-2 rotate-45 bg-[#2c3340]" />
             </div>
           )}
@@ -90,7 +90,7 @@ export function BetPanel({
                 −
               </RoundBtn>
               <div className="grid h-10 flex-1 place-items-center rounded-xl bg-[#0f1218] font-mono text-[13px] text-white">
-                {ksh(Number.isFinite(stake) ? stake : 0)}
+                {usd(Number.isFinite(stake) ? stake : 0)}
               </div>
               <RoundBtn onClick={() => setAmountSafe(stake + 1)} ariaLabel="Increase stake">
                 +
@@ -100,7 +100,7 @@ export function BetPanel({
 
           {bet?.status === "open" && (
             <div className="grid h-10 place-items-center rounded-xl bg-[#0f1218] font-mono text-[13px] text-white">
-              {ksh(bet.amount)}
+              {usd(bet.amount)}
             </div>
           )}
 
@@ -157,7 +157,7 @@ export function BetPanel({
               disabled={pending || tooLow || stake > 5000}
               onClick={() => {
                 if (stake < 10) {
-                  setError("Minimum amount is KSh 10")
+                  setError("Minimum amount is USD 10")
                   return
                 }
                 void run(() =>
@@ -196,7 +196,7 @@ export function BetPanel({
               className="grid h-full min-h-[88px] w-full place-content-center rounded-[12px] bg-[linear-gradient(180deg,#ffd27a,#e0a03a)] px-2 text-center font-semibold text-black"
             >
               <span className="text-[15px] leading-tight">Cash out</span>
-              <span className="font-mono text-[11px]">{ksh(bet.amount * multiplier)}</span>
+              <span className="font-mono text-[11px]">{usd(bet.amount * multiplier)}</span>
             </button>
           )}
 

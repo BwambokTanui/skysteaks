@@ -6,7 +6,7 @@ import { useBalance } from "@/components/layout/balance"
 import { Button } from "@/components/ui/button"
 import { Notice } from "@/components/ui/notice"
 import { Panel } from "@/components/ui/panel"
-import { ksh } from "@/lib/format"
+import { usd } from "@/lib/format"
 
 export function WalletCard() {
   const router = useRouter()
@@ -37,15 +37,23 @@ export function WalletCard() {
   return (
     <Panel className="grid gap-4 p-5">
       <div>
-        <p className="text-sm text-[var(--muted)]">Play credits</p>
-        <p className="mt-2 font-mono text-4xl">{balance == null ? "KSh —" : ksh(balance)}</p>
+        <p className="text-sm text-[var(--muted)]">USD play credits</p>
+        <p className="mt-2 font-mono text-4xl">{balance == null ? "USD —" : usd(balance)}</p>
         <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
-          Credits are for play inside SkySteaks. Add 1,000 at a time, up to 50,000.
+          Credits are for play inside SkySteaks. Deposit USD 1,000 at a time, up to USD 50,000.
         </p>
       </div>
-      <Button type="button" onClick={topup} disabled={pending} className="w-fit">
-        Add 1,000
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" onClick={topup} disabled={pending} className="w-fit">
+          Deposit USD 1,000
+        </Button>
+        <a href="/wallet?tab=withdraw" className="inline-flex h-11 items-center rounded-2xl bg-[var(--bg-elevated)] px-4 text-sm font-semibold text-[var(--text)]">
+          Withdraw
+        </a>
+        <a href="/wallet/history" className="inline-flex h-11 items-center rounded-2xl bg-[var(--bg-elevated)] px-4 text-sm font-semibold text-[var(--text)]">
+          History
+        </a>
+      </div>
       {message && <Notice tone={tone}>{message}</Notice>}
     </Panel>
   )

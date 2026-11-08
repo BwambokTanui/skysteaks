@@ -5,12 +5,21 @@ export function money(value: number) {
   }).format(value)
 }
 
+/** USD display — primary currency across SkySteaks. */
+export function usd(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value)
+}
+
+/** @deprecated use usd() */
 export function ksh(value: number) {
-  return `KSh ${money(value)}`
+  return usd(value)
 }
 
 export function signedMoney(value: number) {
-  const formatted = money(Math.abs(value))
+  const formatted = usd(Math.abs(value))
   if (value > 0) return `+${formatted}`
   if (value < 0) return `−${formatted}`
   return formatted
