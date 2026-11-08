@@ -1,6 +1,6 @@
 # SkySteaks
 
-Sportsbook and Aviator at [skysteaks.com](https://skysteaks.com). Play credits across football, basketball, tennis, and crash rounds.
+Sportsbook and Aviator at [skystakebet.com](https://skystakebet.com). Play credits across football, basketball, tennis, and crash rounds.
 
 ## Setup
 
