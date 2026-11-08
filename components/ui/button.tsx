@@ -1,10 +1,10 @@
 import { cn } from "@/lib/cn"
 
 const variants = {
-  primary: "bg-[var(--sporty)] text-white hover:brightness-110",
-  ghost: "bg-white/6 text-white hover:bg-white/10",
-  danger: "bg-white/6 text-[var(--rose)] hover:bg-[rgba(255,93,115,0.12)]",
-  cash: "bg-[var(--mint)] text-black hover:brightness-110",
+  primary: "bg-[var(--sporty)] text-white shadow-[0_8px_18px_rgba(227,27,35,0.28)] hover:brightness-110",
+  ghost: "bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[#e7ebf2]",
+  danger: "bg-[#ffe8ea] text-[var(--rose)] hover:bg-[#ffd7db]",
+  cash: "bg-[var(--mint)] text-white hover:brightness-110",
 }
 
 const sizes = {

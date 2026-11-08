@@ -30,19 +30,21 @@ export function BottomNav() {
   const current = activeId(path)
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#0b0d10] pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto grid h-[62px] max-w-lg grid-cols-5">
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(10px+env(safe-area-inset-bottom))]">
+      <div className="pointer-events-auto mx-auto flex h-[58px] max-w-md items-center justify-between rounded-full border border-[var(--line)] bg-white px-2 shadow-[0_12px_40px_rgba(15,23,42,0.14)]">
         {items.map((item) => {
           const active = current === item.id
           return (
             <Link
               key={item.id}
               href={item.href}
-              className={cn("relative grid place-items-center gap-0.5 text-[10px]", active ? "text-white" : "text-[#8b93a7]")}
+              className={cn(
+                "grid h-12 w-12 place-items-center rounded-full transition",
+                active ? "bg-[var(--sporty)] text-white shadow-[0_8px_18px_rgba(227,27,35,0.35)]" : "text-[var(--muted)]",
+              )}
+              aria-label={item.label}
             >
-              {active && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-[#e31b23]" />}
               <NavIcon id={item.id} active={active} />
-              <span>{item.label}</span>
             </Link>
           )
         })}
@@ -54,9 +56,9 @@ export function BottomNav() {
 function NavIcon({ id, active }: { id: (typeof items)[number]["id"]; active: boolean }) {
   if (id === "home") {
     return (
-      <span className={cn("grid h-6 w-6 place-items-center rounded-md text-[10px] font-black", active ? "bg-[#e31b23] text-white" : "bg-white/10")}>
-        S
-      </span>
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+        <path d="M12 3.2 3.5 10.2V21h6.2v-6.2h4.6V21h6.2V10.2L12 3.2Z" />
+      </svg>
     )
   }
   if (id === "sports") {
@@ -67,7 +69,7 @@ function NavIcon({ id, active }: { id: (typeof items)[number]["id"]; active: boo
     )
   }
   if (id === "games") {
-    return <PlaneIcon className={cn("h-5 w-5", active ? "text-[#e31b23]" : "")} />
+    return <PlaneIcon className={cn("h-5 w-5", active ? "text-white" : "")} />
   }
   if (id === "bets") {
     return (

@@ -48,16 +48,16 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-4xl gap-4 px-4 py-8 lg:px-6">
+    <div className="mx-auto grid w-full max-w-lg gap-4 px-3 py-6">
       <div>
-        <h1 className="text-3xl font-semibold">{session.profile?.username ?? "Pilot"}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--text)]">{session.profile?.username ?? "Pilot"}</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">{session.user.email}</p>
       </div>
       <WalletCard />
 
       <Panel className="overflow-hidden">
-        <div className="border-b border-white/10 px-5 py-4">
-          <h2 className="text-lg font-semibold">Sports tickets</h2>
+        <div className="border-b border-[var(--line)] px-5 py-4">
+          <h2 className="text-lg font-bold text-[var(--text)]">Sports tickets</h2>
         </div>
         {ticketError && <p className="px-5 py-4 text-sm text-[var(--rose)]">{ticketError}</p>}
         {!ticketError && tickets.length === 0 && (
@@ -66,7 +66,7 @@ export default async function AccountPage() {
         {!ticketError && tickets.length > 0 && (
           <div className="grid gap-3 p-4">
             {tickets.map((ticket) => (
-              <div key={ticket.id} className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <div key={ticket.id} className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Pill tone={toneForStatus(ticket.status)}>{ticket.status}</Pill>
                   <p className="font-mono text-sm text-[var(--muted)]">{formatTime(ticket.createdAt)}</p>
@@ -78,7 +78,7 @@ export default async function AccountPage() {
                     </p>
                   ))}
                 </div>
-                <div className="mt-3 flex flex-wrap gap-4 font-mono text-sm">
+                <div className="mt-3 flex flex-wrap gap-4 font-mono text-sm text-[var(--text)]">
                   <span>Stake {money(ticket.stake)}</span>
                   <span>Odds {ticket.totalOdds.toFixed(2)}</span>
                   <span>Return {money(ticket.potentialPayout)}</span>
@@ -91,8 +91,8 @@ export default async function AccountPage() {
       </Panel>
 
       <Panel className="overflow-hidden">
-        <div className="border-b border-white/10 px-5 py-4">
-          <h2 className="text-lg font-semibold">Aviator bets</h2>
+        <div className="border-b border-[var(--line)] px-5 py-4">
+          <h2 className="text-lg font-bold text-[var(--text)]">Aviator bets</h2>
         </div>
         {error && <p className="px-5 py-4 text-sm text-[var(--rose)]">Run supabase/schema.sql, then refresh this page.</p>}
         {!error && bets.length === 0 && <p className="px-5 py-6 text-sm text-[var(--muted)]">Your Aviator bets will show up here.</p>}
@@ -114,7 +114,7 @@ export default async function AccountPage() {
                   const profit = bet.profit == null ? null : Number(bet.profit)
                   const cashout = bet.cashout_multiplier == null ? null : Number(bet.cashout_multiplier)
                   return (
-                    <tr key={bet.id} className="border-t border-white/6">
+                    <tr key={bet.id} className="border-t border-[var(--line)]">
                       <td className="px-5 py-3 font-mono">{bet.round_number}</td>
                       <td className="px-3 py-3 font-mono">{money(Number(bet.amount))}</td>
                       <td className="px-3 py-3">

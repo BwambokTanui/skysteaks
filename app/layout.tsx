@@ -26,7 +26,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await getSessionContext()
   return (
     <html lang="en">
-      <body className={`${outfit.variable} ${mono.variable} flex min-h-dvh flex-col bg-[#07080b] font-sans text-white antialiased`}>
+      <body className={`${outfit.variable} ${mono.variable} flex min-h-dvh flex-col bg-[var(--bg)] font-sans text-[var(--text)] antialiased`}>
         <Providers
           configured={session.configured}
           email={session.user?.email ?? null}

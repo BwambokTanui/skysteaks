@@ -120,7 +120,7 @@ export function Verifier() {
               key={item.roundNumber}
               type="button"
               onClick={() => verifyValues(item.serverSeed, item.roundNumber)}
-              className="flex items-center justify-between gap-3 rounded-2xl bg-black/25 px-3 py-2 text-left hover:bg-white/6"
+              className="flex items-center justify-between gap-3 rounded-2xl bg-[var(--bg-elevated)] px-3 py-2 text-left hover:bg-[#e7ebf2]"
             >
               <span className="text-sm text-[var(--muted)]">Round {item.roundNumber}</span>
               <Pill tone={toneForCrash(item.crashPoint)}>{item.crashPoint.toFixed(2)}x</Pill>

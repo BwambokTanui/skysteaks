@@ -4,8 +4,8 @@ export function SetupNotice({ message }: { message?: string | null }) {
   return (
     <Panel className="grid gap-4 p-6">
       <div>
-        <p className="text-xs font-semibold tracking-[0.22em] text-[var(--mint)]">SETUP</p>
-        <h1 className="mt-2 text-2xl font-semibold">Connect Supabase</h1>
+        <p className="text-xs font-semibold tracking-[0.22em] text-[var(--sporty)]">SETUP</p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-[var(--text)]">Connect Supabase</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
           {message || "SkySteaks keeps accounts, balances, and crash points in Supabase. The browser never receives the crash point early."}
         </p>

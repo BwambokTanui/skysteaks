@@ -78,8 +78,8 @@ export function AuthForm({ mode, configured }: { mode: "login" | "signup"; confi
       {!configured && <SetupNotice />}
       <Panel className="grid gap-5 p-6">
         <div>
-          <p className="text-xs font-semibold tracking-[0.22em] text-[var(--mint)]">SKYSTEAKS</p>
-          <h1 className="mt-2 text-3xl font-semibold">{mode === "login" ? "Log in" : "Create account"}</h1>
+          <p className="text-xs font-semibold tracking-[0.22em] text-[var(--sporty)]">SKYSTEAKS</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--text)]">{mode === "login" ? "Log in" : "Create account"}</h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
             {mode === "login" ? "Pick up your play credits for sports and Aviator." : "New accounts start with 1,000 play credits."}
           </p>
@@ -107,14 +107,14 @@ export function AuthForm({ mode, configured }: { mode: "login" | "signup"; confi
           {mode === "login" ? (
             <>
               New here?{" "}
-              <Link href="/signup" className="text-white">
+              <Link href="/signup" className="font-semibold text-[var(--sporty)]">
                 Create an account
               </Link>
             </>
           ) : (
             <>
               Already flying?{" "}
-              <Link href="/login" className="text-white">
+              <Link href="/login" className="font-semibold text-[var(--sporty)]">
                 Log in
               </Link>
             </>

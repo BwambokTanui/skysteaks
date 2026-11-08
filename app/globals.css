@@ -6,20 +6,22 @@
 }
 
 :root {
-  color-scheme: dark;
-  --bg: #07080b;
-  --bg-elevated: #0e1118;
-  --surface: #12161f;
-  --surface-2: #171c27;
-  --line: rgba(255, 255, 255, 0.08);
-  --text: #f5f7fb;
-  --muted: #8b93a7;
-  --mint: #39ff14;
-  --gold: #f3c57b;
-  --rose: #ff5d73;
-  --blue: #7ecbff;
+  color-scheme: light;
+  --bg: #f3f5f8;
+  --bg-elevated: #eef1f6;
+  --surface: #ffffff;
+  --surface-2: #f4f6fa;
+  --line: rgba(15, 23, 42, 0.08);
+  --text: #111827;
+  --muted: #6b7280;
+  --mint: #16a34a;
+  --gold: #d97706;
+  --rose: #e31b23;
+  --blue: #2563eb;
   --sporty: #e31b23;
   --sporty-deep: #c8161d;
+  --shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.1);
 }
 
 * {
@@ -33,7 +35,9 @@ body {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse at top, rgba(227, 27, 35, 0.06), transparent 42%),
+    linear-gradient(180deg, #f7f8fb 0%, var(--bg) 40%, #eef1f6 100%);
   color: var(--text);
 }
 
@@ -43,17 +47,17 @@ input {
 }
 
 ::selection {
-  background: rgba(57, 255, 20, 0.28);
+  background: rgba(227, 27, 35, 0.18);
 }
 
 .scroll-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-color: rgba(15, 23, 42, 0.2) transparent;
 }
 
 input[type="range"] {
   appearance: none;
-  background: #3a4050;
+  background: #d7dce6;
   border-radius: 999px;
   height: 6px;
 }
@@ -63,7 +67,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  background: #39ff14;
+  background: #e31b23;
 }
 
 @keyframes cashout-float-up {
