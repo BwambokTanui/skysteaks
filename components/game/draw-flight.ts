@@ -66,7 +66,7 @@ function drawPlane(
   scale = 1,
   now = 0,
 ) {
-  const s = Math.max(0.85, Math.min(1.35, scale * 1.15))
+  const s = Math.max(0.55, Math.min(0.95, scale * 0.78))
   const red = crashed ? "#ff6b7a" : "#e31b23"
   ctx.save()
   ctx.translate(x, y)
@@ -422,7 +422,7 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
   // Light axes only — keep focus on the plane path
   drawAxes(ctx, plot, active ? multiplier : 1, crashed)
 
-  const planeScale = Math.min(width, height) / 340
+  const planeScale = Math.min(width, height) / 460
 
   if (!active) {
     const bob = reduced ? 0 : Math.sin(now / 280) * 5
