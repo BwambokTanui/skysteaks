@@ -487,38 +487,27 @@ begin
 end;
 $$;
 
+-- Prefer supabase/wallet.sql in production (deposit_play_credit + ledger).
 create or replace function public.topup_play_credit()
 returns numeric
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  v_balance numeric(14,2);
-  v_last timestamptz;
 begin
   if auth.uid() is null then
     raise exception 'not authenticated';
   end if;
-  select balance, last_topup_at into v_balance, v_last
-  from public.profiles
-  where id = auth.uid()
-  for update;
-  if v_balance is null then
-    raise exception 'profile missing';
-  end if;
-  if v_last is not null and v_last > clock_timestamp() - interval '20 seconds' then
-    raise exception 'wait before topping up';
-  end if;
-  if v_balance + 1000 > 50000 then
-    raise exception 'balance cap reached';
-  end if;
+  -- Legacy fixed top-up; wallet.sql upgrades this to deposit_play_credit(1000).
   update public.profiles
-    set balance = balance + 1000,
+    set balance = least(50000, balance + 1000),
         last_topup_at = clock_timestamp()
     where id = auth.uid()
-    returning balance into v_balance;
-  return v_balance;
+      and balance + 1000 <= 50000;
+  if not found then
+    raise exception 'balance cap reached';
+  end if;
+  return (select balance from public.profiles where id = auth.uid());
 end;
 $$;
 
