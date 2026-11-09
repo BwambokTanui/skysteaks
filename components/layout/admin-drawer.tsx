@@ -13,7 +13,8 @@ const links = [
   { href: "/games", label: "Games lobby", hint: "Aviator entry" },
   { href: "/wallet", label: "Wallet", hint: "Deposit & withdraw" },
   { href: "/wallet/history", label: "Ledger", hint: "Deposit history" },
-  { href: "/account", label: "Players / me", hint: "Account & tickets" },
+  { href: "/account", label: "My account", hint: "Profile & wallet" },
+  { href: "/bets", label: "Bet history", hint: "Won & lost tickets" },
   { href: "/fairness", label: "Fairness", hint: "Seed verifier" },
 ] as const
 

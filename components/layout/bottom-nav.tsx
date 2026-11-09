@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn"
 const items = [
   { href: "/", label: "Home", id: "home" },
   { href: "/games", label: "Games", id: "games" },
-  { href: "/account", label: "Bets", id: "bets" },
+  { href: "/bets", label: "Bets", id: "bets" },
   { href: "/account", label: "Me", id: "me" },
 ] as const
 
@@ -16,8 +16,8 @@ function activeId(path: string) {
   if (path === "/" || path.startsWith("/sports")) return "home"
   if (path === "/games" || path === "/fairness") return "games"
   if (path.startsWith("/aviator")) return "games"
-  if (path === "/account") return "bets"
-  if (path === "/login" || path === "/signup") return "me"
+  if (path.startsWith("/bets")) return "bets"
+  if (path.startsWith("/account") || path.startsWith("/wallet") || path === "/login" || path === "/signup") return "me"
   return ""
 }
 
