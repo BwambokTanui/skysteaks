@@ -44,7 +44,6 @@ export function SiteHeader({
 
   const categories = [
     { href: "/games", label: "Games", active: path === "/games" },
-    { href: "/aviator", label: "Aviator", active: path.startsWith("/aviator") },
     { href: "/?sport=football", label: "Football", active: path === "/" && search.get("sport") === "football" && search.get("live") !== "1" },
     { href: "/?live=1", label: "Live", active: path === "/" && search.get("live") === "1" },
   ]
