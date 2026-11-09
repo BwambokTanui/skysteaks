@@ -5,7 +5,14 @@ import type { SportsCatalog } from "@/lib/sports/types"
 
 export function useSportsCatalog(
   initial: SportsCatalog | null,
-  options?: { sport?: string | null; live?: boolean; featured?: boolean; intervalMs?: number },
+  options?: {
+    sport?: string | null
+    live?: boolean
+    featured?: boolean
+    league?: string | null
+    day?: string | null
+    intervalMs?: number
+  },
 ) {
   const [catalog, setCatalog] = useState<SportsCatalog | null>(initial)
   const [loading, setLoading] = useState(false)
@@ -15,6 +22,8 @@ export function useSportsCatalog(
     if (options?.sport) params.set("sport", options.sport)
     if (options?.live) params.set("live", "1")
     if (options?.featured) params.set("featured", "1")
+    if (options?.league) params.set("league", options.league)
+    if (options?.day) params.set("day", options.day === "today" ? "today" : options.day)
     setLoading(true)
     try {
       const response = await fetch(`/api/sports/catalog?${params.toString()}`, { cache: "no-store" })
@@ -24,7 +33,7 @@ export function useSportsCatalog(
     } finally {
       setLoading(false)
     }
-  }, [options?.sport, options?.live, options?.featured])
+  }, [options?.sport, options?.live, options?.featured, options?.league, options?.day])
 
   useEffect(() => {
     setCatalog(initial)

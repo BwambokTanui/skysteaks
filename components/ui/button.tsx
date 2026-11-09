@@ -5,6 +5,7 @@ const variants = {
   ghost: "bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[#e7ebf2]",
   danger: "bg-[#ffe8ea] text-[var(--rose)] hover:bg-[#ffd7db]",
   cash: "bg-[var(--mint)] text-white hover:brightness-110",
+  betslip: "bg-[var(--betslip)] text-[var(--betslip-ink)] shadow-[0_8px_18px_rgba(234,179,8,0.35)] hover:brightness-105",
 }
 
 const sizes = {

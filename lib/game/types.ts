@@ -12,6 +12,8 @@ export type PublicRound = {
   serverSeedHash: string
   serverSeed: string | null
   crashPoint: number | null
+  /** Flight length in ms — used to stop the plane exactly when the round crashes. */
+  flyMs: number | null
 }
 
 export type Bet = {

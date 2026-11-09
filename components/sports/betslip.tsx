@@ -68,12 +68,12 @@ export function BetslipDock() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-3 z-[70] grid h-14 w-14 place-items-center rounded-full bg-[var(--sporty)] text-white shadow-[0_12px_28px_rgba(227,27,35,0.45)] transition active:scale-95 lg:bottom-6"
+          className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-3 z-[70] grid h-14 w-14 place-items-center rounded-full bg-[var(--betslip)] text-[var(--betslip-ink)] shadow-[0_12px_28px_rgba(234,179,8,0.45)] transition active:scale-95 lg:bottom-6"
           aria-label={`Open betslip, ${items.length} selection${items.length === 1 ? "" : "s"}`}
         >
           <span className="relative grid h-full w-full place-items-center">
             <SlipIcon />
-            <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-white px-1 font-mono text-[11px] font-bold leading-none text-[var(--sporty)]">
+            <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--sporty)] px-1 font-mono text-[11px] font-bold leading-none text-white">
               {items.length}
             </span>
           </span>
@@ -97,7 +97,7 @@ export function BetslipDock() {
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 lg:hidden" />
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-[var(--sporty)]">BETSLIP</p>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-[var(--gold)]">BETSLIP</p>
             <h2 className="text-lg font-bold text-[var(--text)]">
               {items.length ? `${items.length} selection${items.length === 1 ? "" : "s"}` : "Empty"}
             </h2>
@@ -178,11 +178,11 @@ export function BetslipDock() {
             </div>
 
             {balance != null ? (
-              <Button type="button" size="lg" disabled={pending} onClick={place}>
+              <Button type="button" variant="betslip" size="lg" disabled={pending} onClick={place}>
                 {pending ? "Placing…" : "Place bet"}
               </Button>
             ) : (
-              <Link href="/login" className={buttonClasses("primary", "lg")}>
+              <Link href="/login" className={buttonClasses("betslip", "lg")}>
                 Sign in to place
               </Link>
             )}

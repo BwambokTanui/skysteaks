@@ -54,6 +54,12 @@ export type SportsCatalog = {
   sports: Sport[]
   events: SportsEvent[]
   liveCount: number
+  counts: {
+    live: number
+    football: number
+    premierLeague: number
+    laLiga: number
+  }
 }
 
 export type TicketSummary = {

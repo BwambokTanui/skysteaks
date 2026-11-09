@@ -308,6 +308,7 @@ begin
     'serverSeedHash', r.server_seed_hash,
     'serverSeed', case when r.status = 'crashed' then r.server_seed else null end,
     'crashPoint', case when r.status = 'crashed' then r.crash_point else null end,
+    'flyMs', case when r.status in ('flying', 'crashed') then r.fly_ms else null end,
     'serverNow', clock_timestamp()
   );
 end;

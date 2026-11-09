@@ -83,10 +83,13 @@ function drawRocket(
   angle: number,
   accent: FlightAccent,
   crashed: boolean,
+  scale = 1,
 ) {
+  const s = Math.max(0.72, Math.min(1.15, scale))
   ctx.save()
   ctx.translate(x, y)
   ctx.rotate(angle)
+  ctx.scale(s, s)
   ctx.fillStyle = accent.hex
   ctx.shadowColor = accent.rgba(0.8)
   ctx.shadowBlur = 20
@@ -135,12 +138,12 @@ function elapsedMs(multiplier: number) {
 }
 
 function plotFor(width: number, height: number, multiplier: number): Plot {
-  const left = 36
-  const top = 18
-  const right = width - 44
-  const bottom = height - 34
-  const plotW = right - left
-  const plotH = bottom - top
+  const left = Math.max(28, Math.min(40, width * 0.08))
+  const top = Math.max(14, height * 0.06)
+  const right = width - Math.max(46, Math.min(58, width * 0.14))
+  const bottom = height - Math.max(36, Math.min(48, height * 0.14))
+  const plotW = Math.max(40, right - left)
+  const plotH = Math.max(40, bottom - top)
   const axisMax = Math.min(50, Math.max(5, Math.ceil(Math.max(multiplier, 1) + 0.75)))
   const timeMaxMs = Math.max(8_000, elapsedMs(Math.max(multiplier, 1.5)) * 1.15)
   return { left, top, right, bottom, plotW, plotH, axisMax, timeMaxMs }
@@ -364,6 +367,8 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
   // Axes under the flight path so the curve reads on top of the grid
   drawAxes(ctx, plot, active ? multiplier : 1, crashed)
 
+  const rocketScale = Math.min(width, height) / 360
+
   if (!active) {
     const bob = reduced ? 0 : Math.sin(now / 280) * 5
     const idle = flightAccent(1)
@@ -374,19 +379,20 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
     ctx.quadraticCurveTo(plot.left + plot.plotW * 0.45, plot.bottom - 10, plot.left + plot.plotW * 0.7, yAt(1.4, plot))
     ctx.stroke()
     ctx.setLineDash([])
-    drawRocket(ctx, plot.left + 40, plot.bottom - 16 + bob, -0.3, idle, false)
+    drawRocket(ctx, plot.left + Math.min(48, plot.plotW * 0.18), plot.bottom - 16 + bob, -0.3, idle, false, rocketScale)
   } else {
     const exit = crashed ? Math.min(1, Math.max(0, crashAge / 760)) : 0
     const points = curve(multiplier, plot, exit)
     const last = points[points.length - 1]
     const previous = points[Math.max(0, points.length - 10)]
     if (last && previous) {
-      const glow = ctx.createRadialGradient(last.x, last.y, 0, last.x, last.y, 120)
+      const glowR = Math.min(120, Math.max(70, plot.plotW * 0.22))
+      const glow = ctx.createRadialGradient(last.x, last.y, 0, last.x, last.y, glowR)
       glow.addColorStop(0, accent.rgba(0.5))
       glow.addColorStop(1, "rgba(0,0,0,0)")
       ctx.fillStyle = glow
       ctx.beginPath()
-      ctx.arc(last.x, last.y, 120, 0, Math.PI * 2)
+      ctx.arc(last.x, last.y, glowR, 0, Math.PI * 2)
       ctx.fill()
 
       strokeCurve(ctx, points)
@@ -402,7 +408,7 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
 
       strokeCurve(ctx, points)
       ctx.strokeStyle = accent.hex
-      ctx.lineWidth = 5
+      ctx.lineWidth = Math.max(3.5, Math.min(5.5, width / 90))
       ctx.lineJoin = "round"
       ctx.lineCap = "round"
       ctx.shadowColor = accent.rgba(0.95)
@@ -416,7 +422,7 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
       ctx.stroke()
 
       ctx.globalAlpha = 1 - exit
-      drawRocket(ctx, last.x, last.y, Math.atan2(last.y - previous.y, last.x - previous.x), accent, crashed)
+      drawRocket(ctx, last.x, last.y, Math.atan2(last.y - previous.y, last.x - previous.x), accent, crashed, rocketScale)
       ctx.globalAlpha = 1
     }
   }

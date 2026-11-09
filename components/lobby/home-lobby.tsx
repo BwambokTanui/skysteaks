@@ -9,12 +9,18 @@ export function HomeLobby({
   code,
   sport,
   live,
+  league,
+  day,
 }: {
   catalog: SportsCatalog | null
   error?: string | null
   code?: "config" | "schema" | "error" | null
   sport?: string | null
   live?: boolean
+  league?: string | null
+  day?: string | null
 }) {
-  return <SportsBoard catalog={catalog} error={error} code={code} sport={sport} live={live} />
+  return (
+    <SportsBoard catalog={catalog} error={error} code={code} sport={sport} live={live} league={league} day={day} />
+  )
 }

@@ -68,7 +68,9 @@ export default async function AccountPage() {
             {tickets.map((ticket) => (
               <div key={ticket.id} className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Pill tone={toneForStatus(ticket.status)}>{ticket.status}</Pill>
+                  <Pill tone={toneForStatus(ticket.status)}>
+                    {ticket.status === "won" ? "Won" : ticket.status === "lost" ? "Lost" : ticket.status}
+                  </Pill>
                   <p className="font-mono text-sm text-[var(--muted)]">{formatTime(ticket.createdAt)}</p>
                 </div>
                 <div className="mt-3 grid gap-1 text-sm">
@@ -113,15 +115,28 @@ export default async function AccountPage() {
                 {bets.map((bet) => {
                   const profit = bet.profit == null ? null : Number(bet.profit)
                   const cashout = bet.cashout_multiplier == null ? null : Number(bet.cashout_multiplier)
+                  const resultLabel =
+                    bet.status === "cashed" ? "Won" : bet.status === "lost" ? "Lost" : bet.status === "open" ? "Open" : bet.status
+                  const resultTone = toneForStatus(bet.status === "cashed" ? "won" : bet.status)
                   return (
                     <tr key={bet.id} className="border-t border-[var(--line)]">
                       <td className="px-5 py-3 font-mono">{bet.round_number}</td>
                       <td className="px-3 py-3 font-mono">{money(Number(bet.amount))}</td>
                       <td className="px-3 py-3">
-                        <Pill tone={toneForStatus(bet.status)}>{bet.status}</Pill>
+                        <Pill tone={resultTone}>{resultLabel}</Pill>
                       </td>
                       <td className="px-3 py-3 font-mono">{cashout == null ? "—" : `${cashout.toFixed(2)}x`}</td>
-                      <td className="px-3 py-3 font-mono">{profit == null ? "—" : signedMoney(profit)}</td>
+                      <td
+                        className={`px-3 py-3 font-mono font-semibold ${
+                          bet.status === "cashed" ? "text-[var(--mint)]" : bet.status === "lost" ? "text-[var(--rose)]" : ""
+                        }`}
+                      >
+                        {profit == null && bet.status === "lost"
+                          ? signedMoney(-Number(bet.amount))
+                          : profit == null
+                            ? "—"
+                            : signedMoney(profit)}
+                      </td>
                       <td className="px-5 py-3 text-[var(--muted)]">{formatTime(bet.created_at)}</td>
                     </tr>
                   )

@@ -105,9 +105,13 @@ export function BetPanel({
           )}
 
           {(bet?.status === "cashed" || bet?.status === "lost") && (
-            <div className="grid h-10 place-items-center rounded-xl bg-[#0f1218] font-mono text-[13px]">
-              <span className={bet.status === "cashed" ? "text-[#39ff14]" : "text-[#ff5d73]"}>
-                {signedMoney(bet.profit ?? (bet.status === "lost" ? -bet.amount : 0))}
+            <div className="grid h-10 content-center rounded-xl bg-[#0f1218] px-2 text-center font-mono text-[12px] leading-tight">
+              <span className={bet.status === "cashed" ? "font-bold text-[#39ff14]" : "font-bold text-[#ff5d73]"}>
+                {bet.status === "cashed" ? "Won" : "Lost"} {signedMoney(bet.profit ?? (bet.status === "lost" ? -bet.amount : 0))}
+              </span>
+              <span className="text-[10px] text-[#8b93a7]">
+                Stake {usd(bet.amount)}
+                {bet.status === "cashed" && bet.cashoutMultiplier != null ? ` · ${bet.cashoutMultiplier.toFixed(2)}x` : ""}
               </span>
             </div>
           )}
@@ -205,14 +209,18 @@ export function BetPanel({
           )}
 
           {state.authenticated && bet?.status === "cashed" && (
-            <div className="grid h-full min-h-[88px] place-content-center rounded-[12px] bg-[#1f7a3a] px-2 text-center text-sm font-semibold text-[#7dff9a]">
-              Cashed {bet.cashoutMultiplier?.toFixed(2)}x
+            <div className="grid h-full min-h-[88px] place-content-center rounded-[12px] bg-[#1f7a3a] px-2 text-center font-semibold text-[#7dff9a]">
+              <span className="text-[15px] leading-tight">Won</span>
+              <span className="font-mono text-[12px]">{signedMoney(bet.profit ?? 0)}</span>
+              <span className="text-[11px] opacity-90">Cashed {bet.cashoutMultiplier?.toFixed(2)}x</span>
             </div>
           )}
 
           {state.authenticated && bet?.status === "lost" && (
-            <div className="grid h-full min-h-[88px] place-content-center rounded-[12px] bg-[#4a1d24] px-2 text-center text-sm font-semibold text-[#ff5d73]">
-              Flew away
+            <div className="grid h-full min-h-[88px] place-content-center rounded-[12px] bg-[#4a1d24] px-2 text-center font-semibold text-[#ff5d73]">
+              <span className="text-[15px] leading-tight">Lost</span>
+              <span className="font-mono text-[12px]">{signedMoney(-(bet.amount ?? 0))}</span>
+              <span className="text-[11px] opacity-90">Flew away</span>
             </div>
           )}
         </div>

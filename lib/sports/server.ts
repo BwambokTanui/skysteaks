@@ -49,27 +49,48 @@ async function refreshLiveFeed() {
   return ingestLiveSportsFeed().catch(() => null)
 }
 
+function isPremierLeague(name: string, id: string) {
+  const hay = `${name} ${id}`.toLowerCase()
+  return /premier league|english premier|epl/.test(hay)
+}
+
+function isLaLiga(name: string, id: string) {
+  const hay = `${name} ${id}`.toLowerCase()
+  return /la liga|laliga|spanish primera/.test(hay)
+}
+
+function sameLocalDay(iso: string, day: string) {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return false
+  const local = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+  return local === day
+}
+
+function leagueRank(name: string, id: string) {
+  if (isPremierLeague(name, id)) return 0
+  if (isLaLiga(name, id)) return 1
+  if (/champions league|europa league|serie a|bundesliga|ligue 1/.test(`${name} ${id}`.toLowerCase())) return 2
+  return 5
+}
+
 export async function loadSportsCatalog(options?: {
   sport?: string | null
   live?: boolean
   featured?: boolean
+  league?: string | null
+  day?: string | null
 }): Promise<SportsCatalog> {
   const service = await ensureService()
   await refreshLiveFeed()
 
   const [{ data: sportRows, error: sportError }, eventsQuery] = await Promise.all([
     service.from("sports").select("id, name, sort_order").order("sort_order"),
-    (async () => {
-      let query = service
-        .from("events")
-        .select("id, league_id, home_team, away_team, kickoff_at, status, home_score, away_score, minute, featured, leagues(id, name, sport_id, sports(id, name))")
-        .neq("status", "settled")
-        .order("kickoff_at", { ascending: true })
-        .limit(100)
-      if (options?.live) query = query.eq("status", "live")
-      if (options?.featured) query = query.eq("featured", true)
-      return query
-    })(),
+    service
+      .from("events")
+      .select("id, league_id, home_team, away_team, kickoff_at, status, home_score, away_score, minute, featured, leagues(id, name, sport_id, sports(id, name))")
+      .neq("status", "settled")
+      .order("kickoff_at", { ascending: true })
+      .limit(120),
   ])
 
   if (sportError) throw new GameDataError(sportError.message)
@@ -80,13 +101,51 @@ export async function loadSportsCatalog(options?: {
     name: asString(row.name),
   }))
 
-  let eventRows = (eventsQuery.data ?? []) as Row[]
+  const allRows = (eventsQuery.data ?? []) as Row[]
+  const mappedMeta = allRows.map((row) => {
+    const league = unwrap(row.leagues)
+    const sport = unwrap(league.sports)
+    return {
+      row,
+      sportId: asString(sport.id ?? "unknown"),
+      leagueId: asString(league.id ?? row.league_id ?? "unknown"),
+      leagueName: asString(league.name ?? "League"),
+      status: asStatus(row.status),
+      kickoffAt: asString(row.kickoff_at),
+    }
+  })
+
+  const counts = {
+    live: mappedMeta.filter((item) => item.status === "live").length,
+    football: mappedMeta.filter((item) => item.sportId === "football").length,
+    premierLeague: mappedMeta.filter((item) => isPremierLeague(item.leagueName, item.leagueId)).length,
+    laLiga: mappedMeta.filter((item) => isLaLiga(item.leagueName, item.leagueId)).length,
+  }
+
+  let eventRows = allRows
+  if (options?.live) eventRows = eventRows.filter((row) => row.status === "live")
+  if (options?.featured) eventRows = eventRows.filter((row) => Boolean(row.featured))
   if (options?.sport) {
     eventRows = eventRows.filter((row) => {
-      const league = row.leagues as Row | null
-      const sport = league?.sports as Row | null
-      return sport?.id === options.sport
+      const league = unwrap(row.leagues)
+      const sport = unwrap(league.sports)
+      return sport.id === options.sport
     })
+  }
+  if (options?.league === "premier_league") {
+    eventRows = eventRows.filter((row) => {
+      const league = unwrap(row.leagues)
+      return isPremierLeague(asString(league.name ?? "x"), asString(league.id ?? row.league_id ?? "x"))
+    })
+  }
+  if (options?.league === "la_liga") {
+    eventRows = eventRows.filter((row) => {
+      const league = unwrap(row.leagues)
+      return isLaLiga(asString(league.name ?? "x"), asString(league.id ?? row.league_id ?? "x"))
+    })
+  }
+  if (options?.day) {
+    eventRows = eventRows.filter((row) => sameLocalDay(asString(row.kickoff_at), options.day!))
   }
 
   const eventIds = eventRows.map((row) => asString(row.id))
@@ -123,36 +182,38 @@ export async function loadSportsCatalog(options?: {
     }
   }
 
-  const events: SportsEvent[] = eventRows.map((row) => {
-    const league = unwrap(row.leagues)
-    const sport = unwrap(league.sports)
-    return {
-      id: asString(row.id),
-      sportId: asString(sport.id),
-      sportName: asString(sport.name),
-      leagueId: asString(league.id ?? row.league_id),
-      leagueName: asString(league.name),
-      homeTeam: asString(row.home_team),
-      awayTeam: asString(row.away_team),
-      kickoffAt: asString(row.kickoff_at),
-      status: asStatus(row.status),
-      homeScore: asNullableNumber(row.home_score),
-      awayScore: asNullableNumber(row.away_score),
-      minute: asNullableNumber(row.minute),
-      featured: Boolean(row.featured),
-      markets: marketsByEvent.get(asString(row.id)) ?? [],
-    }
-  })
-
-  const { count } = await service
-    .from("events")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "live")
+  const events: SportsEvent[] = eventRows
+    .map((row) => {
+      const league = unwrap(row.leagues)
+      const sport = unwrap(league.sports)
+      return {
+        id: asString(row.id),
+        sportId: asString(sport.id),
+        sportName: asString(sport.name),
+        leagueId: asString(league.id ?? row.league_id),
+        leagueName: asString(league.name),
+        homeTeam: asString(row.home_team),
+        awayTeam: asString(row.away_team),
+        kickoffAt: asString(row.kickoff_at),
+        status: asStatus(row.status),
+        homeScore: asNullableNumber(row.home_score),
+        awayScore: asNullableNumber(row.away_score),
+        minute: asNullableNumber(row.minute),
+        featured: Boolean(row.featured),
+        markets: marketsByEvent.get(asString(row.id)) ?? [],
+      }
+    })
+    .sort((a, b) => {
+      const rank = leagueRank(a.leagueName, a.leagueId) - leagueRank(b.leagueName, b.leagueId)
+      if (rank !== 0) return rank
+      return new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime()
+    })
 
   return {
     sports,
     events,
-    liveCount: count ?? events.filter((event) => event.status === "live").length,
+    liveCount: counts.live,
+    counts,
   }
 }
 

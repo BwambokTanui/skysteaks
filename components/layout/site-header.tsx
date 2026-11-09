@@ -50,7 +50,7 @@ export function SiteHeader({
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-white">
         <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-3 px-3">
           <div className="flex min-w-0 items-center gap-2">
             {isAdmin && (

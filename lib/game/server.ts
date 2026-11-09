@@ -59,6 +59,7 @@ function mapRound(value: unknown) {
     serverSeedHash: asString(row.serverSeedHash, "bad round"),
     serverSeed: reveal ? asNullableString(row.serverSeed) : null,
     crashPoint: reveal ? asNullableNumber(row.crashPoint) : null,
+    flyMs: asNullableNumber(row.flyMs),
   }
   return { round, serverNow: asString(row.serverNow, "bad round") }
 }

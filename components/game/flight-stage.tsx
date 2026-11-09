@@ -5,15 +5,37 @@ import { drawFlight, flightAccent, makeStars, type Star } from "@/components/gam
 import { displayMultiplier } from "@/lib/game/math"
 import { publishMultiplier } from "@/lib/game/ticker"
 import { flightPhrase } from "@/lib/format"
-import type { PublicRound } from "@/lib/game/types"
+import type { PublicRound, RoundStatus } from "@/lib/game/types"
 
-function multiplierFor(round: PublicRound | null, estimated: number) {
-  if (!round) return 1
-  if (round.status === "crashed" && round.crashPoint) return round.crashPoint
-  if (round.status === "flying" && round.flyingStartedAt && estimated > 1_000_000_000_000) {
-    return displayMultiplier(estimated - new Date(round.flyingStartedAt).getTime())
+function flightView(round: PublicRound | null, estimated: number) {
+  if (!round) {
+    return { multiplier: 1, status: "idle" as RoundStatus | "idle", crashAge: -1 }
   }
-  return 1
+
+  if (round.status === "crashed") {
+    const crashPoint = round.crashPoint ?? 1
+    const crashAge =
+      round.crashedAt && estimated > 1_000_000_000_000
+        ? estimated - new Date(round.crashedAt).getTime()
+        : 0
+    return { multiplier: crashPoint, status: "crashed" as const, crashAge }
+  }
+
+  if (round.status === "flying" && round.flyingStartedAt && estimated > 1_000_000_000_000) {
+    const elapsed = Math.max(0, estimated - new Date(round.flyingStartedAt).getTime())
+    const flyMs = round.flyMs
+    if (flyMs != null && flyMs >= 0 && elapsed >= flyMs) {
+      return {
+        multiplier: displayMultiplier(flyMs),
+        status: "crashed" as const,
+        crashAge: elapsed - flyMs,
+      }
+    }
+    const capped = flyMs != null ? Math.min(elapsed, flyMs) : elapsed
+    return { multiplier: displayMultiplier(capped), status: "flying" as const, crashAge: -1 }
+  }
+
+  return { multiplier: 1, status: round.status, crashAge: -1 }
 }
 
 export function FlightStage({
@@ -31,13 +53,16 @@ export function FlightStage({
   const numberRef = useRef<HTMLSpanElement>(null)
   const phraseRef = useRef<HTMLSpanElement>(null)
   const countRef = useRef<HTMLSpanElement>(null)
+  const playersRef = useRef<HTMLSpanElement>(null)
   const starsRef = useRef<{ round: number; stars: Star[] }>({ round: -1, stars: [] })
   const modelRef = useRef({
     round: null as PublicRound | null,
     serverNowMs: 0,
     clientPerf: 0,
+    players: 1,
   })
   modelRef.current.round = round
+  modelRef.current.players = players
 
   useEffect(() => {
     if (!serverNow) return
@@ -59,8 +84,8 @@ export function FlightStage({
       const estimated = modelRef.current.serverNowMs
         ? modelRef.current.serverNowMs + (now - modelRef.current.clientPerf)
         : 0
-      const multiplier = multiplierFor(current, estimated)
-      const status = current?.status ?? "idle"
+      const view = flightView(current, estimated)
+      const { multiplier, status, crashAge } = view
       publishMultiplier(multiplier)
       if (numberRef.current) {
         const accent = flightAccent(multiplier, status === "crashed")
@@ -71,7 +96,7 @@ export function FlightStage({
           status === "flying" || status === "crashed" ? `0 0 28px ${accent.rgba(0.55)}` : "none"
       }
       if (phraseRef.current) {
-        phraseRef.current.textContent = flightPhrase(multiplier, status)
+        phraseRef.current.textContent = flightPhrase(multiplier, status === "idle" ? "betting" : status)
         if (status === "flying") {
           const accent = flightAccent(multiplier)
           phraseRef.current.style.color = accent.hex
@@ -88,6 +113,9 @@ export function FlightStage({
         const left = Math.max(0, new Date(current.bettingEndsAt).getTime() - estimated)
         countRef.current.textContent = (left / 1000).toFixed(1)
       }
+      if (playersRef.current) {
+        playersRef.current.textContent = String(Math.max(modelRef.current.players, 1))
+      }
       if (ctx) {
         const rect = canvas.getBoundingClientRect()
         const dpr = Math.min(window.devicePixelRatio || 1, 2)
@@ -98,11 +126,10 @@ export function FlightStage({
           canvas.height = Math.floor(height * dpr)
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-        const crashAge = current?.status === "crashed" && current.crashedAt ? estimated - new Date(current.crashedAt).getTime() : -1
         drawFlight(ctx, {
           width,
           height,
-          status,
+          status: status === "idle" ? "betting" : status,
           multiplier,
           now,
           crashAge,
@@ -125,7 +152,7 @@ export function FlightStage({
           className="min-h-5 text-sm font-semibold tracking-[0.2em] text-[#9fdfff]"
           style={{ textShadow: "0 0 12px rgba(126,203,255,0.55)" }}
         />
-        <span ref={numberRef} className="font-mono text-[64px] font-bold leading-none tracking-tight text-white sm:text-[72px]">
+        <span ref={numberRef} className="font-mono text-[clamp(42px,12vw,72px)] font-bold leading-none tracking-tight text-white">
           1.00x
         </span>
         {round?.status === "betting" && (
@@ -134,25 +161,13 @@ export function FlightStage({
           </p>
         )}
       </div>
-      <div className="absolute bottom-9 right-12 flex items-center gap-3 text-[11px] text-white/70">
-        <span className="inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[#39ff14]">
-          <WifiIcon />
-          234ms
-        </span>
+      <div className="absolute bottom-3 right-3 flex items-center gap-2 text-[11px] text-white/70">
         <span className="inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5">
           <UserIcon />
-          {Math.max(players, 1)}
+          <span ref={playersRef}>{Math.max(players, 1)}</span>
         </span>
       </div>
     </div>
-  )
-}
-
-function WifiIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
-      <path d="M12 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm-4.2-3.3 1.2 1.2a4.2 4.2 0 0 1 6 0l1.2-1.2a5.9 5.9 0 0 0-8.4 0Zm-2.5-2.5 1.2 1.2a7.7 7.7 0 0 1 11 0l1.2-1.2a9.4 9.4 0 0 0-13.4 0Z" />
-    </svg>
   )
 }
 

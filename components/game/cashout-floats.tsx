@@ -37,10 +37,13 @@ const NAME_POOL = [
   "Kai***91",
   "Dex***66",
   "Mia***33",
+  "Pat***42",
+  "Kim***08",
+  "Lou***55",
+  "Vin***29",
 ]
 
 const STAKE_POOL = [10, 20, 50, 100, 200, 500, 1000, 2500]
-const BOT_COUNT = 32
 /** How long a cashout stays visible in multiplier-space (shared across devices). */
 const FLOAT_WINDOW = 0.22
 
@@ -55,10 +58,16 @@ function mulberry32(seed: number) {
   }
 }
 
+function botCountForRound(roundNumber: number) {
+  const random = mulberry32(roundNumber * 4243 + 7)
+  return 24 + Math.floor(random() * 72) // 24–95
+}
+
 /** Same seed → identical bots on every device for this round. */
 function seedBots(roundNumber: number): BotPlan[] {
   const random = mulberry32(roundNumber * 7919 + 13)
-  return Array.from({ length: BOT_COUNT }, (_, index) => {
+  const count = botCountForRound(roundNumber)
+  return Array.from({ length: count }, (_, index) => {
     const u = random()
     const cashAt = Number((1.01 + Math.pow(u, 1.6) * 9 + (u > 0.9 ? random() * 14 : 0)).toFixed(2))
     return {
@@ -70,7 +79,15 @@ function seedBots(roundNumber: number): BotPlan[] {
   })
 }
 
-function crowdFromMultiplier(round: PublicRound | null, multiplier: number, liveBets: LiveBet[]) {
+/** Soft join/leave pulse so the lobby count never looks frozen. */
+function lobbyPulse(roundNumber: number, estimatedMs: number) {
+  const waveA = Math.sin(estimatedMs / 1400 + roundNumber * 0.17) * 5
+  const waveB = Math.sin(estimatedMs / 900 + roundNumber) * 3
+  const waveC = Math.cos(estimatedMs / 2100) * 2
+  return Math.round(waveA + waveB + waveC)
+}
+
+function crowdFromMultiplier(round: PublicRound | null, multiplier: number, liveBets: LiveBet[], nowMs: number) {
   const realOpen = liveBets.filter((bet) => bet.status === "open").length
   const realCashed = liveBets.filter((bet) => bet.status === "cashed" && bet.cashoutMultiplier != null)
 
@@ -79,10 +96,12 @@ function crowdFromMultiplier(round: PublicRound | null, multiplier: number, live
   }
 
   const bots = seedBots(round.roundNumber)
-  const total = bots.length + Math.max(liveBets.length, realOpen + realCashed.length)
+  const pulse = lobbyPulse(round.roundNumber, nowMs || Date.now())
+  const totalBase = bots.length + Math.max(liveBets.length, realOpen + realCashed.length)
 
   if (round.status === "betting") {
-    return { floats: [] as FloatItem[], inPlay: bots.length + realOpen, total }
+    const inPlay = Math.max(8, bots.length + realOpen + pulse)
+    return { floats: [] as FloatItem[], inPlay, total: Math.max(totalBase + 8, inPlay) }
   }
 
   if (round.status === "crashed") {
@@ -98,12 +117,11 @@ function crowdFromMultiplier(round: PublicRound | null, multiplier: number, live
         payout: Math.round(bot.stake * bot.cashAt * 100) / 100,
         lane: index % 5,
       }))
-    return { floats: late, inPlay: 0, total }
+    return { floats: late, inPlay: 0, total: totalBase }
   }
 
-  // Flying: deterministic — every device at the same multiplier shows the same pops/count
   const cashedBots = bots.filter((bot) => bot.cashAt <= multiplier)
-  const inPlay = bots.length - cashedBots.length + realOpen
+  const inPlay = Math.max(0, bots.length - cashedBots.length + realOpen + Math.max(-2, Math.min(2, pulse)))
 
   const recentBots = cashedBots
     .filter((bot) => multiplier - bot.cashAt <= FLOAT_WINDOW)
@@ -132,7 +150,7 @@ function crowdFromMultiplier(round: PublicRound | null, multiplier: number, live
     }))
 
   const floats = [...recentReal, ...recentBots].slice(0, 8)
-  return { floats, inPlay, total }
+  return { floats, inPlay, total: Math.max(totalBase, inPlay, 1) }
 }
 
 export function useCashoutCrowd({
@@ -143,6 +161,7 @@ export function useCashoutCrowd({
   liveBets: LiveBet[]
 }) {
   const [multiplier, setMultiplier] = useState(1)
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     const sync = () => setMultiplier(getMultiplier())
@@ -153,14 +172,19 @@ export function useCashoutCrowd({
     }
   }, [round?.id, round?.status])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setTick((value) => value + 1), 900)
+    return () => window.clearInterval(timer)
+  }, [round?.id])
+
   return useMemo(() => {
-    const crowd = crowdFromMultiplier(round, multiplier, liveBets)
+    const crowd = crowdFromMultiplier(round, multiplier, liveBets, Date.now())
     return {
       floats: crowd.floats,
       inPlay: Math.max(0, crowd.inPlay),
       total: Math.max(crowd.total, crowd.inPlay, 1),
     }
-  }, [round, liveBets, multiplier])
+  }, [round, liveBets, multiplier, tick])
 }
 
 export function CashoutFloats({ items }: { items: FloatItem[] }) {
