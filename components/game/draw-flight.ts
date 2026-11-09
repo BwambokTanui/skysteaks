@@ -18,27 +18,21 @@ export type FlightAccent = {
 
 const GROWTH = 0.00006
 
-/** Color shifts at each whole multiplier milestone while flying. */
+/** Trail stays Aviator-red; brightens slightly as the multiplier climbs. */
 export function flightAccent(multiplier: number, crashed = false): FlightAccent {
   if (crashed) {
-    return { hex: "#ff5d73", rgba: (a) => `rgba(255,93,115,${a})` }
+    return { hex: "#ff3b4e", rgba: (a) => `rgba(255,59,78,${a})` }
   }
   if (multiplier >= 10) {
-    return { hex: "#c77dff", rgba: (a) => `rgba(199,125,255,${a})` }
+    return { hex: "#ff6a3d", rgba: (a) => `rgba(255,106,61,${a})` }
   }
   if (multiplier >= 5) {
-    return { hex: "#ff6b9d", rgba: (a) => `rgba(255,107,157,${a})` }
-  }
-  if (multiplier >= 4) {
-    return { hex: "#ff9f1c", rgba: (a) => `rgba(255,159,28,${a})` }
-  }
-  if (multiplier >= 3) {
-    return { hex: "#ffd60a", rgba: (a) => `rgba(255,214,10,${a})` }
+    return { hex: "#ff4d55", rgba: (a) => `rgba(255,77,85,${a})` }
   }
   if (multiplier >= 2) {
-    return { hex: "#2de2e6", rgba: (a) => `rgba(45,226,230,${a})` }
+    return { hex: "#e31b23", rgba: (a) => `rgba(227,27,35,${a})` }
   }
-  return { hex: "#39ff14", rgba: (a) => `rgba(57,255,20,${a})` }
+  return { hex: "#d0121a", rgba: (a) => `rgba(208,18,26,${a})` }
 }
 
 function mulberry32(seed: number) {
@@ -61,22 +55,8 @@ export function makeStars(roundNumber: number) {
   }))
 }
 
-function drawAlien(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
-  ctx.save()
-  ctx.translate(x, y)
-  ctx.fillStyle = "#5ec8ff"
-  ctx.beginPath()
-  ctx.ellipse(0, 0, size * 0.7, size, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = "#0a1020"
-  ctx.beginPath()
-  ctx.ellipse(-size * 0.22, -size * 0.1, size * 0.18, size * 0.28, 0, 0, Math.PI * 2)
-  ctx.ellipse(size * 0.22, -size * 0.1, size * 0.18, size * 0.28, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.restore()
-}
-
-function drawRocket(
+/** Classic Aviator red propeller plane — nose points along +x before rotation. */
+function drawPlane(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -84,41 +64,104 @@ function drawRocket(
   accent: FlightAccent,
   crashed: boolean,
   scale = 1,
+  now = 0,
 ) {
-  const s = Math.max(0.72, Math.min(1.15, scale))
+  const s = Math.max(0.85, Math.min(1.35, scale * 1.15))
+  const red = crashed ? "#ff6b7a" : "#e31b23"
   ctx.save()
   ctx.translate(x, y)
   ctx.rotate(angle)
   ctx.scale(s, s)
-  ctx.fillStyle = accent.hex
-  ctx.shadowColor = accent.rgba(0.8)
-  ctx.shadowBlur = 20
+  ctx.shadowColor = accent.rgba(0.85)
+  ctx.shadowBlur = 18
+
+  // Lower wing
+  ctx.fillStyle = red
   ctx.beginPath()
-  ctx.moveTo(28, 0)
-  ctx.lineTo(-11, 11)
-  ctx.quadraticCurveTo(-20, 0, -11, -11)
+  ctx.moveTo(-2, 2)
+  ctx.lineTo(-18, 16)
+  ctx.lineTo(-8, 16)
+  ctx.lineTo(10, 3)
   ctx.closePath()
   ctx.fill()
+
+  // Fuselage
+  ctx.beginPath()
+  ctx.moveTo(30, 0)
+  ctx.quadraticCurveTo(22, -5.5, 8, -6)
+  ctx.lineTo(-16, -4.5)
+  ctx.quadraticCurveTo(-24, -3, -26, 0)
+  ctx.quadraticCurveTo(-24, 3, -16, 4.5)
+  ctx.lineTo(8, 6)
+  ctx.quadraticCurveTo(22, 5.5, 30, 0)
+  ctx.closePath()
+  ctx.fill()
+
+  // Upper wing
+  ctx.beginPath()
+  ctx.moveTo(-4, -1)
+  ctx.lineTo(-22, -15)
+  ctx.lineTo(-10, -15)
+  ctx.lineTo(12, -2)
+  ctx.closePath()
+  ctx.fill()
+
+  // Tail fin
+  ctx.beginPath()
+  ctx.moveTo(-18, -3)
+  ctx.lineTo(-28, -14)
+  ctx.lineTo(-22, -3)
+  ctx.closePath()
+  ctx.fill()
+  ctx.beginPath()
+  ctx.moveTo(-18, 3)
+  ctx.lineTo(-26, 11)
+  ctx.lineTo(-20, 3)
+  ctx.closePath()
+  ctx.fill()
+
   ctx.shadowBlur = 0
-  ctx.fillStyle = "#08140c"
+
+  // Cockpit
+  ctx.fillStyle = crashed ? "rgba(255,200,210,0.85)" : "rgba(255,255,255,0.92)"
   ctx.beginPath()
-  ctx.ellipse(5, 0, 5.2, 3.3, 0, 0, Math.PI * 2)
+  ctx.ellipse(10, -1.2, 5.5, 2.6, -0.15, 0, Math.PI * 2)
   ctx.fill()
-  ctx.fillStyle = crashed ? "#ff8da0" : "#ffffff"
-  ctx.globalAlpha = crashed ? 1 : 0.9
+
+  // White X mark on fuselage
+  ctx.strokeStyle = "rgba(255,255,255,0.9)"
+  ctx.lineWidth = 1.6
+  ctx.lineCap = "round"
   ctx.beginPath()
-  ctx.moveTo(-11, -8)
-  ctx.lineTo(-24, -13)
-  ctx.lineTo(-15, 0)
-  ctx.closePath()
-  ctx.fill()
+  ctx.moveTo(-2, -2.2)
+  ctx.lineTo(4, 2.2)
+  ctx.moveTo(4, -2.2)
+  ctx.lineTo(-2, 2.2)
+  ctx.stroke()
+
+  // Propeller hub + spinning blades
+  ctx.fillStyle = "#1a1a1a"
   ctx.beginPath()
-  ctx.moveTo(-11, 8)
-  ctx.lineTo(-24, 13)
-  ctx.lineTo(-15, 0)
-  ctx.closePath()
+  ctx.arc(30, 0, 2.4, 0, Math.PI * 2)
   ctx.fill()
-  ctx.globalAlpha = 1
+  if (!crashed) {
+    const spin = (now / 40) % (Math.PI * 2)
+    ctx.save()
+    ctx.translate(30, 0)
+    ctx.rotate(spin)
+    ctx.strokeStyle = "rgba(255,255,255,0.75)"
+    ctx.lineWidth = 1.4
+    ctx.beginPath()
+    ctx.moveTo(0, -9)
+    ctx.lineTo(0, 9)
+    ctx.moveTo(-8, -4)
+    ctx.lineTo(8, 4)
+    ctx.moveTo(-8, 4)
+    ctx.lineTo(8, -4)
+    ctx.stroke()
+    ctx.restore()
+  }
+
   ctx.restore()
 }
 
@@ -336,12 +379,30 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
   const { width, height, status, multiplier, now, crashAge, stars, reduced } = model
   ctx.clearRect(0, 0, width, height)
 
-  const sky = ctx.createLinearGradient(0, 0, 0, height)
-  sky.addColorStop(0, "#0a1020")
-  sky.addColorStop(0.45, "#070b14")
-  sky.addColorStop(1, "#030508")
-  ctx.fillStyle = sky
+  // Dark stage + purple sunburst (Odi-style)
+  ctx.fillStyle = "#07070c"
   ctx.fillRect(0, 0, width, height)
+  const cx = width * 0.55
+  const cy = height * 0.58
+  const burst = ctx.createRadialGradient(cx, cy, 8, cx, cy, Math.max(width, height) * 0.75)
+  burst.addColorStop(0, "rgba(88, 40, 120, 0.55)")
+  burst.addColorStop(0.35, "rgba(40, 18, 70, 0.28)")
+  burst.addColorStop(1, "rgba(0,0,0,0)")
+  ctx.fillStyle = burst
+  ctx.fillRect(0, 0, width, height)
+
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.strokeStyle = "rgba(140, 90, 180, 0.08)"
+  ctx.lineWidth = 1
+  for (let i = 0; i < 28; i++) {
+    const a = (i / 28) * Math.PI * 2
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(Math.cos(a) * width, Math.sin(a) * height)
+    ctx.stroke()
+  }
+  ctx.restore()
 
   if (status === "crashed" && crashAge >= 0 && crashAge < 420 && !reduced) {
     ctx.save()
@@ -349,14 +410,8 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
   }
 
   for (const star of stars) {
-    ctx.fillStyle = `rgba(255,255,255,${0.16 + star.z * 0.45})`
-    ctx.fillRect(star.x * width, star.y * height, star.z * 1.7, star.z * 1.7)
-  }
-
-  for (let i = 0; i < 7; i++) {
-    const ax = (i * 97 + (reduced ? 0 : now / 40)) % width
-    const ay = (i * 53) % (height * 0.72)
-    drawAlien(ctx, ax, ay + 18, 4 + (i % 3))
+    ctx.fillStyle = `rgba(255,255,255,${0.1 + star.z * 0.35})`
+    ctx.fillRect(star.x * width, star.y * height, star.z * 1.5, star.z * 1.5)
   }
 
   const crashed = status === "crashed"
@@ -364,44 +419,35 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
   const accent = flightAccent(multiplier, crashed)
   const plot = plotFor(width, height, active ? Math.max(multiplier, 5) : 5)
 
-  // Axes under the flight path so the curve reads on top of the grid
+  // Light axes only — keep focus on the plane path
   drawAxes(ctx, plot, active ? multiplier : 1, crashed)
 
-  const rocketScale = Math.min(width, height) / 360
+  const planeScale = Math.min(width, height) / 340
 
   if (!active) {
     const bob = reduced ? 0 : Math.sin(now / 280) * 5
     const idle = flightAccent(1)
-    ctx.strokeStyle = idle.rgba(0.4)
+    ctx.strokeStyle = idle.rgba(0.35)
     ctx.setLineDash([5, 8])
     ctx.beginPath()
     ctx.moveTo(plot.left, plot.bottom)
     ctx.quadraticCurveTo(plot.left + plot.plotW * 0.45, plot.bottom - 10, plot.left + plot.plotW * 0.7, yAt(1.4, plot))
     ctx.stroke()
     ctx.setLineDash([])
-    drawRocket(ctx, plot.left + Math.min(48, plot.plotW * 0.18), plot.bottom - 16 + bob, -0.3, idle, false, rocketScale)
+    drawPlane(ctx, plot.left + Math.min(52, plot.plotW * 0.2), plot.bottom - 18 + bob, -0.28, idle, false, planeScale, now)
   } else {
     const exit = crashed ? Math.min(1, Math.max(0, crashAge / 760)) : 0
     const points = curve(multiplier, plot, exit)
     const last = points[points.length - 1]
     const previous = points[Math.max(0, points.length - 10)]
     if (last && previous) {
-      const glowR = Math.min(120, Math.max(70, plot.plotW * 0.22))
-      const glow = ctx.createRadialGradient(last.x, last.y, 0, last.x, last.y, glowR)
-      glow.addColorStop(0, accent.rgba(0.5))
-      glow.addColorStop(1, "rgba(0,0,0,0)")
-      ctx.fillStyle = glow
-      ctx.beginPath()
-      ctx.arc(last.x, last.y, glowR, 0, Math.PI * 2)
-      ctx.fill()
-
       strokeCurve(ctx, points)
       ctx.lineTo(last.x, plot.bottom)
       ctx.lineTo(points[0].x, plot.bottom)
       ctx.closePath()
       const fill = ctx.createLinearGradient(0, last.y, 0, plot.bottom)
-      fill.addColorStop(0, accent.rgba(0.34))
-      fill.addColorStop(0.55, accent.rgba(0.1))
+      fill.addColorStop(0, accent.rgba(0.38))
+      fill.addColorStop(0.55, accent.rgba(0.12))
       fill.addColorStop(1, "rgba(0,0,0,0)")
       ctx.fillStyle = fill
       ctx.fill()
@@ -411,25 +457,29 @@ export function drawFlight(ctx: CanvasRenderingContext2D, model: DrawModel) {
       ctx.lineWidth = Math.max(3.5, Math.min(5.5, width / 90))
       ctx.lineJoin = "round"
       ctx.lineCap = "round"
-      ctx.shadowColor = accent.rgba(0.95)
-      ctx.shadowBlur = 16
+      ctx.shadowColor = accent.rgba(0.9)
+      ctx.shadowBlur = 14
       ctx.stroke()
       ctx.shadowBlur = 0
 
-      strokeCurve(ctx, points)
-      ctx.strokeStyle = "rgba(255,255,255,0.4)"
-      ctx.lineWidth = 1.6
-      ctx.stroke()
-
       ctx.globalAlpha = 1 - exit
-      drawRocket(ctx, last.x, last.y, Math.atan2(last.y - previous.y, last.x - previous.x), accent, crashed, rocketScale)
+      drawPlane(
+        ctx,
+        last.x,
+        last.y,
+        Math.atan2(last.y - previous.y, last.x - previous.x),
+        accent,
+        crashed,
+        planeScale,
+        now,
+      )
       ctx.globalAlpha = 1
     }
   }
 
   if (crashed) {
-    const alpha = Math.max(0, 0.22 - Math.max(0, crashAge) / 1400)
-    ctx.fillStyle = `rgba(255, 93, 115, ${alpha})`
+    const alpha = Math.max(0, 0.2 - Math.max(0, crashAge) / 1400)
+    ctx.fillStyle = `rgba(255, 59, 78, ${alpha})`
     ctx.fillRect(0, 0, width, height)
   }
 

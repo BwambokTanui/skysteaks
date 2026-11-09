@@ -2,6 +2,7 @@
 
 import { AppShell } from "@/components/layout/app-shell"
 import { BalanceProvider } from "@/components/layout/balance"
+import { SessionProvider } from "@/components/layout/session"
 import { BetslipProvider } from "@/components/sports/betslip-context"
 import type { ReactNode } from "react"
 
@@ -21,12 +22,14 @@ export function Providers({
   children: ReactNode
 }) {
   return (
-    <BalanceProvider initial={balance}>
-      <BetslipProvider>
-        <AppShell configured={configured} email={email} username={username} isAdmin={isAdmin}>
-          {children}
-        </AppShell>
-      </BetslipProvider>
-    </BalanceProvider>
+    <SessionProvider configured={configured} email={email} username={username}>
+      <BalanceProvider initial={balance}>
+        <BetslipProvider>
+          <AppShell configured={configured} email={email} username={username} isAdmin={isAdmin}>
+            {children}
+          </AppShell>
+        </BetslipProvider>
+      </BalanceProvider>
+    </SessionProvider>
   )
 }

@@ -9,11 +9,13 @@ import { HistoryRail } from "@/components/game/history-rail"
 import { SetupNotice } from "@/components/game/setup-notice"
 import { useGameState } from "@/components/game/use-game-state"
 import { useBalance } from "@/components/layout/balance"
+import { useSession } from "@/components/layout/session"
 import { formatClock, usd } from "@/lib/format"
 
 export function GameBoard() {
   const { state, message, code, apply } = useGameState()
   const { balance } = useBalance()
+  const { username: sessionUser } = useSession()
   const [clock, setClock] = useState(formatClock())
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export function GameBoard() {
     )
   }
 
-  const username = state?.me?.username ?? "Pilot"
+  const username = state?.me?.username ?? sessionUser ?? "Pilot"
   const flying = state?.round.status === "flying"
 
   return (

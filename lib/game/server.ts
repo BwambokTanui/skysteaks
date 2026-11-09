@@ -58,8 +58,9 @@ function mapRound(value: unknown) {
     crashedAt: asNullableString(row.crashedAt),
     serverSeedHash: asString(row.serverSeedHash, "bad round"),
     serverSeed: reveal ? asNullableString(row.serverSeed) : null,
-    crashPoint: reveal ? asNullableNumber(row.crashPoint) : null,
-    flyMs: asNullableNumber(row.flyMs),
+    // crashPoint is revealed while flying so the plane can stop on the exact value
+    crashPoint: status === "betting" ? null : asNullableNumber(row.crashPoint),
+    flyMs: status === "betting" ? null : asNullableNumber(row.flyMs),
   }
   return { round, serverNow: asString(row.serverNow, "bad round") }
 }

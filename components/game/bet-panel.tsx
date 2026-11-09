@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useMemo, useState, useSyncExternalStore } from "react"
 import { useBalance } from "@/components/layout/balance"
+import { useSession } from "@/components/layout/session"
 import { signedMoney, usd } from "@/lib/format"
 import { getMultiplier, subscribeMultiplier } from "@/lib/game/ticker"
 import type { GameState } from "@/lib/game/types"
@@ -32,14 +33,16 @@ export function BetPanel({
   onState: (state: GameState) => void
 }) {
   const { balance } = useBalance()
+  const { signedIn } = useSession()
   const multiplier = useMultiplier()
-  const [amount, setAmount] = useState("0.20")
+  const [amount, setAmount] = useState("10.00")
   const [autoOn, setAutoOn] = useState(false)
   const [auto, setAuto] = useState(2)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const stake = Number(amount)
   const tooLow = !Number.isFinite(stake) || stake < 10
+  const authed = Boolean(state?.authenticated || signedIn || balance != null)
 
   const autoLabel = useMemo(() => {
     if (!autoOn) return "Off"
@@ -146,7 +149,7 @@ export function BetPanel({
         </div>
 
         <div className="relative">
-          {!state.authenticated && (
+          {!authed && (
             <Link
               href="/login"
               className="grid h-full min-h-[88px] w-full place-content-center rounded-[12px] bg-[linear-gradient(180deg,#4cff2e_0%,#1f9a14_100%)] px-2 text-center text-sm font-semibold text-black"
@@ -155,7 +158,7 @@ export function BetPanel({
             </Link>
           )}
 
-          {state.authenticated && showAmount && (
+          {authed && showAmount && (
             <button
               type="button"
               disabled={pending || tooLow || stake > 5000}
@@ -176,12 +179,12 @@ export function BetPanel({
               className="relative grid h-full min-h-[88px] w-full place-content-center rounded-[12px] bg-[linear-gradient(180deg,#4cff2e_0%,#1f9a14_100%)] px-2 text-center font-semibold text-black disabled:opacity-40"
             >
               <span className="text-[15px] leading-tight">Place bet</span>
-              <span className="text-[11px] font-medium opacity-80">for the next round</span>
+              <span className="font-mono text-[12px] font-medium opacity-90">{usd(Number.isFinite(stake) ? stake : 0)}</span>
               <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-black/20 text-[10px] text-white">↻</span>
             </button>
           )}
 
-          {state.authenticated && bet?.status === "open" && betting && (
+          {authed && bet?.status === "open" && betting && (
             <button
               type="button"
               disabled={pending}
@@ -192,7 +195,7 @@ export function BetPanel({
             </button>
           )}
 
-          {state.authenticated && bet?.status === "open" && flying && (
+          {authed && bet?.status === "open" && flying && (
             <button
               type="button"
               disabled={pending}
@@ -204,11 +207,11 @@ export function BetPanel({
             </button>
           )}
 
-          {state.authenticated && bet?.status === "open" && !betting && !flying && (
+          {authed && bet?.status === "open" && !betting && !flying && (
             <div className="grid h-full min-h-[88px] place-content-center rounded-[12px] bg-[#2a2f3a] text-sm text-[#8b93a7]">Settling…</div>
           )}
 
-          {state.authenticated && bet?.status === "cashed" && (
+          {authed && bet?.status === "cashed" && (
             <div className="grid h-full min-h-[88px] place-content-center rounded-[12px] bg-[#1f7a3a] px-2 text-center font-semibold text-[#7dff9a]">
               <span className="text-[15px] leading-tight">Won</span>
               <span className="font-mono text-[12px]">{signedMoney(bet.profit ?? 0)}</span>
@@ -216,7 +219,7 @@ export function BetPanel({
             </div>
           )}
 
-          {state.authenticated && bet?.status === "lost" && (
+          {authed && bet?.status === "lost" && (
             <div className="grid h-full min-h-[88px] place-content-center rounded-[12px] bg-[#4a1d24] px-2 text-center font-semibold text-[#ff5d73]">
               <span className="text-[15px] leading-tight">Lost</span>
               <span className="font-mono text-[12px]">{signedMoney(-(bet.amount ?? 0))}</span>

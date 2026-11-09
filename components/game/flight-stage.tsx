@@ -24,15 +24,19 @@ function flightView(round: PublicRound | null, estimated: number) {
   if (round.status === "flying" && round.flyingStartedAt && estimated > 1_000_000_000_000) {
     const elapsed = Math.max(0, estimated - new Date(round.flyingStartedAt).getTime())
     const flyMs = round.flyMs
-    if (flyMs != null && flyMs >= 0 && elapsed >= flyMs) {
-      return {
-        multiplier: displayMultiplier(flyMs),
-        status: "crashed" as const,
-        crashAge: elapsed - flyMs,
-      }
+    const stopAt = round.crashPoint
+    const raw = displayMultiplier(flyMs != null ? Math.min(elapsed, flyMs) : elapsed)
+    const capped = stopAt != null ? Math.min(raw, stopAt) : raw
+    const reachedStop =
+      (flyMs != null && elapsed >= flyMs) || (stopAt != null && raw >= stopAt - 0.0001)
+
+    if (reachedStop) {
+      const exact = stopAt ?? capped
+      const crashAge = flyMs != null ? Math.max(0, elapsed - flyMs) : 0
+      return { multiplier: exact, status: "crashed" as const, crashAge }
     }
-    const capped = flyMs != null ? Math.min(elapsed, flyMs) : elapsed
-    return { multiplier: displayMultiplier(capped), status: "flying" as const, crashAge: -1 }
+
+    return { multiplier: capped, status: "flying" as const, crashAge: -1 }
   }
 
   return { multiplier: 1, status: round.status, crashAge: -1 }
@@ -89,25 +93,17 @@ export function FlightStage({
       publishMultiplier(multiplier)
       if (numberRef.current) {
         const accent = flightAccent(multiplier, status === "crashed")
-        const mark = status === "crashed" ? accent.hex : status === "flying" ? accent.hex : "#7ecbff"
+        const mark = status === "crashed" ? "#ff4d5e" : "#ffffff"
         numberRef.current.innerHTML = `${multiplier.toFixed(2)}<span style="color:${mark}">x</span>`
-        numberRef.current.style.color = status === "flying" || status === "crashed" ? accent.hex : "#ffffff"
+        numberRef.current.style.color = status === "crashed" ? "#ff4d5e" : "#ffffff"
         numberRef.current.style.textShadow =
-          status === "flying" || status === "crashed" ? `0 0 28px ${accent.rgba(0.55)}` : "none"
+          status === "flying" || status === "crashed" ? `0 0 28px ${accent.rgba(0.45)}` : "none"
       }
       if (phraseRef.current) {
         phraseRef.current.textContent = flightPhrase(multiplier, status === "idle" ? "betting" : status)
-        if (status === "flying") {
-          const accent = flightAccent(multiplier)
-          phraseRef.current.style.color = accent.hex
-          phraseRef.current.style.textShadow = `0 0 12px ${accent.rgba(0.55)}`
-        } else if (status === "crashed") {
-          phraseRef.current.style.color = "#ff5d73"
-          phraseRef.current.style.textShadow = "0 0 12px rgba(255,93,115,0.55)"
-        } else {
-          phraseRef.current.style.color = "#9fdfff"
-          phraseRef.current.style.textShadow = "0 0 12px rgba(126,203,255,0.55)"
-        }
+        phraseRef.current.style.color = status === "crashed" ? "#ff4d5e" : "#ffffff"
+        phraseRef.current.style.textShadow =
+          status === "crashed" ? "0 0 12px rgba(255,77,94,0.55)" : "0 0 12px rgba(255,255,255,0.25)"
       }
       if (countRef.current && current?.status === "betting" && estimated > 1_000_000_000_000) {
         const left = Math.max(0, new Date(current.bettingEndsAt).getTime() - estimated)
@@ -147,12 +143,8 @@ export function FlightStage({
     <div className={className ?? "relative h-full min-h-[220px] overflow-hidden bg-black"}>
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-label="Aviator flight" />
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-        <span
-          ref={phraseRef}
-          className="min-h-5 text-sm font-semibold tracking-[0.2em] text-[#9fdfff]"
-          style={{ textShadow: "0 0 12px rgba(126,203,255,0.55)" }}
-        />
-        <span ref={numberRef} className="font-mono text-[clamp(42px,12vw,72px)] font-bold leading-none tracking-tight text-white">
+        <span ref={phraseRef} className="min-h-5 text-sm font-semibold tracking-[0.2em] text-white/80" />
+        <span ref={numberRef} className="font-mono text-[clamp(48px,14vw,78px)] font-bold leading-none tracking-tight text-white">
           1.00x
         </span>
         {round?.status === "betting" && (
