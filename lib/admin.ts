@@ -2,6 +2,8 @@ import "server-only"
 
 import { getSessionContext } from "@/lib/auth"
 import { listAdminDeposits } from "@/lib/deposits"
+import { listAdminWithdrawals } from "@/lib/withdrawals"
+import { isFeeDepositNote } from "@/lib/fees"
 import { createServiceClient } from "@/lib/supabase/service"
 import { ConfigError, GameDataError } from "@/lib/game/errors"
 
@@ -66,10 +68,16 @@ export async function loadAdminOverview() {
   if (ticketsError && !ticketsError.message.includes("does not exist")) throw new GameDataError(ticketsError.message)
 
   let deposits: Awaited<ReturnType<typeof listAdminDeposits>> = []
+  let withdrawals: Awaited<ReturnType<typeof listAdminWithdrawals>> = []
   try {
     deposits = await listAdminDeposits()
   } catch {
     deposits = []
+  }
+  try {
+    withdrawals = await listAdminWithdrawals()
+  } catch {
+    withdrawals = []
   }
 
   return {
@@ -118,5 +126,8 @@ export async function loadAdminOverview() {
       crashedAt: row.crashed_at ? String(row.crashed_at) : null,
     })),
     deposits,
+    fundingDeposits: deposits.filter((item) => !isFeeDepositNote(item.note)),
+    feeDeposits: deposits.filter((item) => isFeeDepositNote(item.note)),
+    withdrawals,
   }
 }

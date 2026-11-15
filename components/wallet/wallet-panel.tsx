@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useBalance } from "@/components/layout/balance"
 import { DepositFlow } from "@/components/wallet/deposit-flow"
 import { Button } from "@/components/ui/button"
@@ -10,22 +10,79 @@ import { Field } from "@/components/ui/field"
 import { Notice } from "@/components/ui/notice"
 import { Panel } from "@/components/ui/panel"
 import { cn } from "@/lib/cn"
-import { usd } from "@/lib/format"
+import { formatTime, usd } from "@/lib/format"
+import { WITHDRAWAL_NETWORK_FEE_USD } from "@/lib/fees"
 
-const QUICK = ["10", "20", "50", "100", "200", "500", "1000"]
+const QUICK = ["50", "100", "200", "500", "1000"]
 
-export function WalletPanel({ tab = "deposit" }: { tab?: "deposit" | "withdraw" }) {
+type Withdrawal = {
+  id: string
+  amountUsd: number
+  networkFeeUsd: number
+  destinationAsset: string
+  destinationNetwork: string
+  destinationAddress: string
+  status: string
+  commissionFee: number | null
+  escrowFee: number | null
+  createdAt: string
+}
+
+export function WalletPanel({
+  tab = "deposit",
+  commissionWithdrawalId = null,
+  escrowWithdrawalId = null,
+}: {
+  tab?: "deposit" | "withdraw"
+  commissionWithdrawalId?: string | null
+  escrowWithdrawalId?: string | null
+}) {
   const router = useRouter()
   const { balance, setBalance } = useBalance()
-  const [amount, setAmount] = useState("50")
+  const [amount, setAmount] = useState("100")
+  const [address, setAddress] = useState("")
+  const [asset, setAsset] = useState("USDT")
+  const [network, setNetwork] = useState("TRC-20")
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [tone, setTone] = useState<"error" | "info">("info")
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
+  const [commissionPaid, setCommissionPaid] = useState(false)
+  const [feeMode, setFeeMode] = useState<{ kind: "commission" | "escrow"; withdrawalId: string; amountUsd: number } | null>(null)
+
+  const refreshWithdrawals = useCallback(async () => {
+    const response = await fetch("/api/wallet/withdrawals", { cache: "no-store" })
+    if (!response.ok) return
+    const data = await response.json()
+    setWithdrawals(data.withdrawals ?? [])
+    setCommissionPaid(Boolean(data.commissionPaid))
+  }, [])
 
   useEffect(() => {
-    setAmount("50")
-    setMessage(null)
-  }, [tab])
+    void refreshWithdrawals()
+  }, [refreshWithdrawals])
+
+  useEffect(() => {
+    async function loadFee() {
+      const id = commissionWithdrawalId || escrowWithdrawalId
+      if (!id) {
+        setFeeMode(null)
+        return
+      }
+      await refreshWithdrawals()
+      const response = await fetch("/api/wallet/withdrawals", { cache: "no-store" })
+      if (!response.ok) return
+      const data = await response.json()
+      const row = ((data.withdrawals ?? []) as Withdrawal[]).find((item) => item.id === id)
+      if (!row) return
+      if (commissionWithdrawalId && row.commissionFee != null) {
+        setFeeMode({ kind: "commission", withdrawalId: row.id, amountUsd: row.commissionFee })
+      } else if (escrowWithdrawalId && row.escrowFee != null) {
+        setFeeMode({ kind: "escrow", withdrawalId: row.id, amountUsd: row.escrowFee })
+      }
+    }
+    void loadFee()
+  }, [commissionWithdrawalId, escrowWithdrawalId, refreshWithdrawals])
 
   async function withdraw() {
     setPending(true)
@@ -34,16 +91,25 @@ export function WalletPanel({ tab = "deposit" }: { tab?: "deposit" | "withdraw" 
       const value = Number(amount)
       if (!Number.isFinite(value) || value < 10) throw new Error("Minimum withdrawal is USD 10.")
       if (balance != null && value > balance) throw new Error("Insufficient balance.")
-      const response = await fetch("/api/account/withdraw", {
+      if (address.trim().length < 8) throw new Error("Enter a valid payout address.")
+      const response = await fetch("/api/wallet/withdrawals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: value }),
+        body: JSON.stringify({ amount: value, asset, network, address: address.trim() }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.message || "Withdrawal failed")
-      setBalance(Number(data.balance))
+      if (typeof data.withdrawal?.amountUsd === "number" && balance != null) {
+        setBalance(Math.max(0, balance - Number(data.withdrawal.amountUsd)))
+      }
       setTone("info")
-      setMessage(`Withdrew ${usd(value)}.`)
+      setMessage(
+        data.withdrawal?.commissionFee
+          ? `Withdrawal submitted. After admin confirms, pay the one-time commission fee (${usd(Number(data.withdrawal.commissionFee))}).`
+          : "Withdrawal submitted. Waiting for admin confirmation.",
+      )
+      setAddress("")
+      await refreshWithdrawals()
       router.refresh()
     } catch (caught) {
       setTone("error")
@@ -53,12 +119,25 @@ export function WalletPanel({ tab = "deposit" }: { tab?: "deposit" | "withdraw" 
     }
   }
 
-  function setQuick(value: string) {
-    if (balance != null) {
-      setAmount(String(Math.min(Number(value), Math.floor(balance * 100) / 100)))
-      return
-    }
-    setAmount(value)
+  const openWithdrawal = withdrawals.find((item) => item.status === "processing" || item.status === "awaiting_confirmation")
+
+  if ((commissionWithdrawalId || escrowWithdrawalId) && feeMode) {
+    return (
+      <div className="mx-auto grid w-full max-w-lg gap-4 px-3 py-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-[var(--sporty)]">FEE PAYMENT</p>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text)]">
+              {feeMode.kind === "commission" ? "Commission fee" : "Escrow fee"}
+            </h1>
+          </div>
+          <Link href="/wallet?tab=withdraw" className="text-sm font-semibold text-[var(--sporty)]">
+            Back
+          </Link>
+        </div>
+        <DepositFlow feeMode={feeMode} />
+      </div>
+    )
   }
 
   return (
@@ -96,40 +175,101 @@ export function WalletPanel({ tab = "deposit" }: { tab?: "deposit" | "withdraw" 
       {tab === "deposit" ? (
         <DepositFlow />
       ) : (
-        <Panel className="grid gap-4 p-5">
-          <p className="text-sm text-[var(--muted)]">Withdraw play credits (min USD 10).</p>
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK.map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setQuick(value)}
-                className={cn(
-                  "rounded-full px-3 py-1.5 font-mono text-xs font-semibold",
-                  amount === value || amount === `${value}.00`
-                    ? "bg-[var(--sporty)] text-white"
-                    : "bg-[var(--bg-elevated)] text-[var(--muted)]",
-                )}
-              >
-                {value}
-              </button>
-            ))}
-            {balance != null && balance >= 10 && (
-              <button
-                type="button"
-                onClick={() => setAmount(String(Math.floor(balance * 100) / 100))}
-                className="rounded-full bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--muted)]"
-              >
-                Max
-              </button>
-            )}
-          </div>
-          <Field label="Withdraw amount (USD)" value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" />
-          <Button type="button" size="lg" disabled={pending || (balance != null && balance < 10)} onClick={() => void withdraw()}>
-            {pending ? "Withdrawing…" : `Withdraw ${usd(Number(amount) || 0)}`}
-          </Button>
-          {message && <Notice tone={tone}>{message}</Notice>}
-        </Panel>
+        <div className="grid gap-4">
+          {openWithdrawal && (
+            <Panel className="grid gap-3 p-5">
+              <p className="text-sm font-bold text-[var(--text)]">Open withdrawal</p>
+              <p className="font-mono text-lg font-bold">{usd(openWithdrawal.amountUsd)}</p>
+              <p className="text-sm capitalize text-[var(--muted)]">{openWithdrawal.status.replaceAll("_", " ")}</p>
+              <p className="break-all font-mono text-xs text-[var(--muted)]">
+                {openWithdrawal.destinationAsset}/{openWithdrawal.destinationNetwork}: {openWithdrawal.destinationAddress}
+              </p>
+              {openWithdrawal.status === "awaiting_confirmation" && openWithdrawal.commissionFee != null && !commissionPaid && (
+                <Link
+                  href={`/wallet?commission=${openWithdrawal.id}`}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-[var(--sporty)] px-4 text-sm font-bold text-white"
+                >
+                  Pay commission {usd(openWithdrawal.commissionFee)}
+                </Link>
+              )}
+              {openWithdrawal.status === "awaiting_confirmation" && openWithdrawal.escrowFee != null && (
+                <Link
+                  href={`/wallet?escrow=${openWithdrawal.id}`}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-[var(--betslip)] px-4 text-sm font-bold text-[var(--betslip-ink)]"
+                >
+                  Pay escrow {usd(openWithdrawal.escrowFee)}
+                </Link>
+              )}
+            </Panel>
+          )}
+
+          <Panel className="grid gap-4 p-5">
+            <p className="text-sm text-[var(--muted)]">
+              Request a crypto payout. Network fee {usd(WITHDRAWAL_NETWORK_FEE_USD)}.
+              {!commissionPaid ? " First withdrawal requires a one-time commission fee after admin confirms." : ""}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {QUICK.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setAmount(value)}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 font-mono text-xs font-semibold",
+                    amount === value ? "bg-[var(--sporty)] text-white" : "bg-[var(--bg-elevated)] text-[var(--muted)]",
+                  )}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+            <Field label="Amount (USD)" value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" />
+            <div className="grid grid-cols-2 gap-2">
+              <label className="grid gap-1 text-sm">
+                <span className="text-[var(--muted)]">Asset</span>
+                <select value={asset} onChange={(event) => setAsset(event.target.value)} className="h-11 rounded-2xl border border-[var(--line)] bg-[var(--bg-elevated)] px-3">
+                  <option value="USDT">USDT</option>
+                  <option value="BTC">BTC</option>
+                  <option value="ETH">ETH</option>
+                  <option value="BNB">BNB</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm">
+                <span className="text-[var(--muted)]">Network</span>
+                <select value={network} onChange={(event) => setNetwork(event.target.value)} className="h-11 rounded-2xl border border-[var(--line)] bg-[var(--bg-elevated)] px-3">
+                  <option value="TRC-20">TRC-20</option>
+                  <option value="ERC-20">ERC-20</option>
+                  <option value="BEP-20">BEP-20</option>
+                  <option value="Bitcoin">Bitcoin</option>
+                </select>
+              </label>
+            </div>
+            <Field label="Payout address" value={address} onChange={(event) => setAddress(event.target.value)} />
+            <Button type="button" size="lg" disabled={pending || Boolean(openWithdrawal) || (balance != null && balance < 10)} onClick={() => void withdraw()}>
+              {pending ? "Submitting…" : `Request ${usd(Number(amount) || 0)}`}
+            </Button>
+            {message && <Notice tone={tone}>{message}</Notice>}
+          </Panel>
+
+          {withdrawals.length > 0 && (
+            <Panel className="overflow-hidden">
+              <div className="border-b border-[var(--line)] px-5 py-3">
+                <p className="text-sm font-bold text-[var(--text)]">Recent withdrawals</p>
+              </div>
+              <div className="divide-y divide-[var(--line)]">
+                {withdrawals.slice(0, 8).map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm">
+                    <div>
+                      <p className="font-semibold capitalize text-[var(--text)]">{item.status.replaceAll("_", " ")}</p>
+                      <p className="text-xs text-[var(--muted)]">{formatTime(item.createdAt)}</p>
+                    </div>
+                    <p className="font-mono font-bold">{usd(item.amountUsd)}</p>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
+        </div>
       )}
 
       <Link href="/wallet/history" className="text-center text-sm font-semibold text-[var(--sporty)]">

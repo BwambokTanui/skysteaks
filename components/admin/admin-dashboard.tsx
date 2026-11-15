@@ -5,7 +5,37 @@ import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Notice } from "@/components/ui/notice"
 import { Panel } from "@/components/ui/panel"
+import { isFeeDepositNote } from "@/lib/fees"
 import { money } from "@/lib/format"
+
+type DepositRow = {
+  id: string
+  username?: string
+  amountUsd: number
+  requestedCrypto: number
+  asset: string
+  network: string
+  address: string
+  status: string
+  note?: string | null
+  createdAt: string
+  userConfirmedAt: string | null
+}
+
+type WithdrawalRow = {
+  id: string
+  username?: string
+  amountUsd: number
+  destinationAsset: string
+  destinationNetwork: string
+  destinationAddress: string
+  status: string
+  commissionFee: number | null
+  escrowFee: number | null
+  commissionPaid?: boolean
+  escrowPaid?: boolean
+  createdAt: string
+}
 
 type Overview = {
   serverNow: string
@@ -26,22 +56,20 @@ type Overview = {
   tickets: { id: string; userId: string; stake: number; totalOdds: number; potentialPayout: number; status: string; createdAt: string }[]
   liveEvents: number
   history: { roundNumber: number; crashPoint: number; forced: boolean; status: string }[]
-  deposits: {
-    id: string
-    username?: string
-    amountUsd: number
-    requestedCrypto: number
-    asset: string
-    network: string
-    address: string
-    status: string
-    createdAt: string
-    userConfirmedAt: string | null
-  }[]
+  deposits: DepositRow[]
+  fundingDeposits?: DepositRow[]
+  feeDeposits?: DepositRow[]
+  withdrawals?: WithdrawalRow[]
 }
 
 export function AdminDashboard({ initial }: { initial: Overview }) {
-  const [data, setData] = useState({ ...initial, deposits: initial.deposits ?? [] })
+  const [data, setData] = useState({
+    ...initial,
+    deposits: initial.deposits ?? [],
+    fundingDeposits: initial.fundingDeposits ?? (initial.deposits ?? []).filter((item) => !isFeeDepositNote(item.note)),
+    feeDeposits: initial.feeDeposits ?? (initial.deposits ?? []).filter((item) => isFeeDepositNote(item.note)),
+    withdrawals: initial.withdrawals ?? [],
+  })
   const [crashInput, setCrashInput] = useState(String(initial.round?.crashPoint ?? "2.00"))
   const [nextInput, setNextInput] = useState(initial.nextCrashPoint != null ? String(initial.nextCrashPoint) : "1.50")
   const [message, setMessage] = useState<string | null>(null)
@@ -52,7 +80,13 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
     const response = await fetch("/api/admin/overview", { cache: "no-store" })
     if (!response.ok) return
     const next = (await response.json()) as Overview
-    setData(next)
+    setData({
+      ...next,
+      deposits: next.deposits ?? [],
+      fundingDeposits: next.fundingDeposits ?? (next.deposits ?? []).filter((item) => !isFeeDepositNote(item.note)),
+      feeDeposits: next.feeDeposits ?? (next.deposits ?? []).filter((item) => isFeeDepositNote(item.note)),
+      withdrawals: next.withdrawals ?? [],
+    })
   }, [])
 
   useEffect(() => {
@@ -125,7 +159,7 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
     }
   }
 
-  async function reviewDeposit(depositId: string, action: "approve" | "reject") {
+  async function reviewDeposit(depositId: string, action: "approve" | "reject", isFee = false) {
     setPending(true)
     setMessage(null)
     try {
@@ -137,7 +171,13 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.message || "Could not update deposit")
       setTone("info")
-      setMessage(action === "approve" ? "Deposit approved and balance credited." : "Deposit rejected.")
+      setMessage(
+        action === "approve"
+          ? isFee
+            ? "Fee payment approved (no balance credit)."
+            : "Deposit approved and balance credited."
+          : "Deposit rejected.",
+      )
       await refresh()
     } catch (caught) {
       setTone("error")
@@ -147,8 +187,42 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
     }
   }
 
+  async function reviewWithdrawal(withdrawalId: string, action: "confirm" | "set-escrow" | "release" | "reject") {
+    setPending(true)
+    setMessage(null)
+    try {
+      const response = await fetch("/api/admin/withdrawals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, withdrawalId }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.message || "Could not update withdrawal")
+      setTone("info")
+      const labels: Record<typeof action, string> = {
+        confirm: "Withdrawal confirmed — user can pay commission/escrow.",
+        "set-escrow": "Escrow fee assigned.",
+        release: "Withdrawal released (funds already reserved).",
+        reject: "Withdrawal rejected and balance refunded.",
+      }
+      setMessage(labels[action])
+      await refresh()
+    } catch (caught) {
+      setTone("error")
+      setMessage(caught instanceof Error ? caught.message : "Could not update withdrawal")
+    } finally {
+      setPending(false)
+    }
+  }
+
   const round = data.round
-  const pendingDeposits = (data.deposits ?? []).filter((item) => item.status === "awaiting_confirmation" || item.status === "processing")
+  const fundingDeposits = data.fundingDeposits ?? []
+  const feeDeposits = data.feeDeposits ?? []
+  const pendingFunding = fundingDeposits.filter((item) => item.status === "awaiting_confirmation" || item.status === "processing")
+  const pendingFees = feeDeposits.filter((item) => item.status === "awaiting_confirmation" || item.status === "processing")
+  const openWithdrawals = (data.withdrawals ?? []).filter(
+    (item) => item.status === "processing" || item.status === "awaiting_confirmation",
+  )
 
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-4 px-3 py-6">
@@ -227,18 +301,140 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
 
       <Panel className="grid gap-3 p-5">
         <div>
-          <h2 className="text-lg font-bold">Crypto deposits</h2>
-          <p className="text-sm text-[var(--muted)]">Approve only after the user taps “I’ve sent it” and you see the transfer.</p>
+          <h2 className="text-lg font-bold">Withdrawals</h2>
+          <p className="text-sm text-[var(--muted)]">
+            Confirm → user pays commission (first time) / escrow if set → release after fee deposits are approved.
+          </p>
         </div>
-        {pendingDeposits.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">No open deposit requests.</p>
+        {openWithdrawals.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">No open withdrawals.</p>
         ) : (
           <div className="grid gap-2">
-            {pendingDeposits.map((item) => (
+            {openWithdrawals.map((item) => (
+              <div key={item.id} className="grid gap-2 rounded-2xl bg-[var(--bg-elevated)] p-3 text-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-[var(--text)]">
+                      {item.username ?? "pilot"} · {money(item.amountUsd)}
+                    </p>
+                    <p className="font-mono text-xs text-[var(--muted)]">
+                      {item.destinationAsset} · {item.destinationNetwork}
+                    </p>
+                    <p className="mt-1 break-all font-mono text-[11px] text-[var(--muted)]">{item.destinationAddress}</p>
+                    <p className="mt-1 text-xs capitalize text-[var(--muted)]">{item.status.replaceAll("_", " ")}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      Commission:{" "}
+                      {item.commissionFee == null
+                        ? "waived"
+                        : `${money(item.commissionFee)}${item.commissionPaid ? " · paid" : " · unpaid"}`}
+                      {" · "}
+                      Escrow:{" "}
+                      {item.escrowFee == null
+                        ? "none"
+                        : `${money(item.escrowFee)}${item.escrowPaid ? " · paid" : " · unpaid"}`}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {item.status === "processing" && (
+                      <Button type="button" disabled={pending} onClick={() => void reviewWithdrawal(item.id, "confirm")}>
+                        Confirm
+                      </Button>
+                    )}
+                    {item.status === "awaiting_confirmation" && (
+                      <>
+                        <Button type="button" disabled={pending} onClick={() => void reviewWithdrawal(item.id, "set-escrow")}>
+                          Set escrow
+                        </Button>
+                        <Button type="button" disabled={pending} onClick={() => void reviewWithdrawal(item.id, "release")}>
+                          Release
+                        </Button>
+                      </>
+                    )}
+                    <Button type="button" variant="ghost" disabled={pending} onClick={() => void reviewWithdrawal(item.id, "reject")}>
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {(data.withdrawals ?? []).filter((item) => item.status === "approved" || item.status === "rejected").slice(0, 8).length > 0 && (
+          <div className="grid gap-1 border-t border-[var(--line)] pt-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Recent reviewed</p>
+            {(data.withdrawals ?? [])
+              .filter((item) => item.status === "approved" || item.status === "rejected")
+              .slice(0, 8)
+              .map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span>
+                    {item.username ?? "pilot"} · {money(item.amountUsd)}
+                  </span>
+                  <span className="capitalize text-[var(--muted)]">{item.status}</span>
+                </div>
+              ))}
+          </div>
+        )}
+      </Panel>
+
+      <Panel className="grid gap-3 p-5">
+        <div>
+          <h2 className="text-lg font-bold">Commission & escrow fees</h2>
+          <p className="text-sm text-[var(--muted)]">Approve after on-chain match — does not credit play balance.</p>
+        </div>
+        {pendingFees.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">No open fee payments.</p>
+        ) : (
+          <div className="grid gap-2">
+            {pendingFees.map((item) => (
               <div key={item.id} className="grid gap-2 rounded-2xl bg-[var(--bg-elevated)] p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-[var(--text)]">{item.username ?? "pilot"} · {money(item.amountUsd)}</p>
+                    <p className="font-semibold text-[var(--text)]">
+                      {item.username ?? "pilot"} · {money(item.amountUsd)}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">{item.note}</p>
+                    <p className="font-mono text-xs text-[var(--muted)]">
+                      {item.requestedCrypto} {item.asset} · {item.network}
+                    </p>
+                    <p className="mt-1 break-all font-mono text-[11px] text-[var(--muted)]">{item.address}</p>
+                    <p className="mt-1 text-xs capitalize text-[var(--muted)]">{item.status.replaceAll("_", " ")}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      disabled={pending || item.status !== "awaiting_confirmation"}
+                      onClick={() => void reviewDeposit(item.id, "approve", true)}
+                    >
+                      Approve fee
+                    </Button>
+                    <Button type="button" variant="ghost" disabled={pending} onClick={() => void reviewDeposit(item.id, "reject", true)}>
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+
+      <Panel className="grid gap-3 p-5">
+        <div>
+          <h2 className="text-lg font-bold">Crypto deposits</h2>
+          <p className="text-sm text-[var(--muted)]">Approve only after the user taps “I’ve sent it” and you see the transfer.</p>
+        </div>
+        {pendingFunding.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">No open deposit requests.</p>
+        ) : (
+          <div className="grid gap-2">
+            {pendingFunding.map((item) => (
+              <div key={item.id} className="grid gap-2 rounded-2xl bg-[var(--bg-elevated)] p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-[var(--text)]">
+                      {item.username ?? "pilot"} · {money(item.amountUsd)}
+                    </p>
                     <p className="font-mono text-xs text-[var(--muted)]">
                       {item.requestedCrypto} {item.asset} · {item.network}
                     </p>
@@ -262,10 +458,10 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
             ))}
           </div>
         )}
-        {(data.deposits ?? []).filter((item) => item.status === "approved" || item.status === "rejected").slice(0, 8).length > 0 && (
+        {fundingDeposits.filter((item) => item.status === "approved" || item.status === "rejected").slice(0, 8).length > 0 && (
           <div className="grid gap-1 border-t border-[var(--line)] pt-3">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Recent reviewed</p>
-            {(data.deposits ?? [])
+            {fundingDeposits
               .filter((item) => item.status === "approved" || item.status === "rejected")
               .slice(0, 8)
               .map((item) => (
@@ -342,7 +538,9 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
             {data.tickets.map((ticket) => (
               <div key={ticket.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[var(--bg-elevated)] px-3 py-2 text-sm">
                 <span className="font-mono text-xs text-[var(--muted)]">{ticket.id.slice(0, 8)}</span>
-                <span>{money(ticket.stake)} @ {ticket.totalOdds.toFixed(2)}</span>
+                <span>
+                  {money(ticket.stake)} @ {ticket.totalOdds.toFixed(2)}
+                </span>
                 <span className="capitalize">{ticket.status}</span>
                 <span className="font-mono">{money(ticket.potentialPayout)}</span>
               </div>

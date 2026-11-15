@@ -28,6 +28,7 @@ export type DepositRequest = {
   userConfirmedAt: string | null
   reviewedAt: string | null
   createdAt: string
+  relatedWithdrawalId?: string | null
   username?: string
 }
 
@@ -107,6 +108,7 @@ export function mapDepositRequest(row: Record<string, unknown>): DepositRequest 
     userConfirmedAt: row.user_confirmed_at == null ? null : String(row.user_confirmed_at),
     reviewedAt: row.reviewed_at == null ? null : String(row.reviewed_at),
     createdAt: String(row.created_at),
+    relatedWithdrawalId: row.related_withdrawal_id == null ? null : String(row.related_withdrawal_id),
   }
 }
 

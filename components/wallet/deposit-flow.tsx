@@ -7,6 +7,7 @@ import { Notice } from "@/components/ui/notice"
 import { Panel } from "@/components/ui/panel"
 import { cn } from "@/lib/cn"
 import { formatTime, usd } from "@/lib/format"
+import { isFeeDepositNote } from "@/lib/fees"
 
 type Method = {
   id: string
@@ -24,6 +25,7 @@ type Deposit = {
   network: string
   address: string
   status: string
+  note?: string | null
   priceUsd: number | null
   userConfirmedAt: string | null
   createdAt: string
@@ -36,12 +38,16 @@ function cryptoLabel(value: number, asset: string) {
   return `${value.toFixed(decimals)} ${asset}`
 }
 
-export function DepositFlow() {
+export function DepositFlow({
+  feeMode,
+}: {
+  feeMode?: { kind: "commission" | "escrow"; withdrawalId: string; amountUsd: number } | null
+}) {
   const [methods, setMethods] = useState<Method[]>([])
   const [deposits, setDeposits] = useState<Deposit[]>([])
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [methodId, setMethodId] = useState<string | null>(null)
-  const [amount, setAmount] = useState("100")
+  const [amount, setAmount] = useState(feeMode ? String(feeMode.amountUsd) : "100")
   const [active, setActive] = useState<Deposit | null>(null)
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -53,6 +59,7 @@ export function DepositFlow() {
     () => deposits.find((item) => item.status === "processing" || item.status === "awaiting_confirmation") ?? null,
     [deposits],
   )
+  const lockedAmount = feeMode?.amountUsd ?? null
 
   const refresh = useCallback(async () => {
     const [methodsRes, depositsRes] = await Promise.all([
@@ -79,24 +86,40 @@ export function DepositFlow() {
     void refresh()
   }, [refresh])
 
+  useEffect(() => {
+    if (feeMode) {
+      setAmount(String(feeMode.amountUsd))
+      setStep(1)
+    }
+  }, [feeMode])
+
   async function createDeposit() {
     if (!methodId) return
     setPending(true)
     setMessage(null)
     try {
-      const value = Number(amount)
-      if (!Number.isFinite(value) || value < 10) throw new Error("Minimum deposit is USD 10.")
+      const value = lockedAmount ?? Number(amount)
+      if (!feeMode && (!Number.isFinite(value) || value < 10)) throw new Error("Minimum deposit is USD 10.")
       const response = await fetch("/api/wallet/deposits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ methodId, amountUsd: value }),
+        body: JSON.stringify({
+          methodId,
+          amountUsd: value,
+          relatedWithdrawalId: feeMode?.withdrawalId,
+          feeKind: feeMode?.kind,
+        }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.message || "Could not create deposit")
       setActive(data.deposit)
       setStep(3)
       setTone("info")
-      setMessage("Send the exact crypto amount, then tap I’ve sent it.")
+      setMessage(
+        feeMode
+          ? `Send the exact ${feeMode.kind} fee amount, then tap I’ve sent it.`
+          : "Send the exact crypto amount, then tap I’ve sent it.",
+      )
       await refresh()
     } catch (caught) {
       setTone("error")
@@ -116,7 +139,11 @@ export function DepositFlow() {
       if (!response.ok) throw new Error(data.message || "Could not confirm deposit")
       setActive(data.deposit)
       setTone("info")
-      setMessage("Marked as sent. An admin will confirm and credit your balance.")
+      setMessage(
+        feeMode || isFeeDepositNote(data.deposit?.note)
+          ? "Marked as sent. An admin will confirm your fee payment."
+          : "Marked as sent. An admin will confirm and credit your balance.",
+      )
       await refresh()
     } catch (caught) {
       setTone("error")
@@ -151,8 +178,18 @@ export function DepositFlow() {
 
   return (
     <div className="grid gap-4">
+      {feeMode && (
+        <Notice tone="info">
+          Paying one-time {feeMode.kind} fee of {usd(feeMode.amountUsd)}. This does not add play credits.
+        </Notice>
+      )}
+
       {openDeposit && openDeposit.status === "awaiting_confirmation" && (
-        <Notice tone="info">Deposit pending admin confirmation — balance updates after approval.</Notice>
+        <Notice tone="info">
+          {isFeeDepositNote(openDeposit.note)
+            ? "Fee payment pending admin confirmation."
+            : "Deposit pending admin confirmation — balance updates after approval."}
+        </Notice>
       )}
 
       <div className="flex items-center gap-2">
@@ -208,13 +245,21 @@ export function DepositFlow() {
               </div>
             </div>
           ))}
-          <Button type="button" size="lg" disabled={!methodId} onClick={() => setStep(2)}>
-            Continue
+          <Button
+            type="button"
+            size="lg"
+            disabled={!methodId}
+            onClick={() => {
+              if (feeMode) void createDeposit()
+              else setStep(2)
+            }}
+          >
+            {feeMode ? (pending ? "Generating…" : "Generate fee payment") : "Continue"}
           </Button>
         </Panel>
       )}
 
-      {step === 2 && selected && (
+      {step === 2 && selected && !feeMode && (
         <Panel className="grid gap-4 p-5">
           <button type="button" className="w-fit text-sm font-semibold text-[var(--muted)]" onClick={() => setStep(1)}>
             ← Change method
@@ -258,7 +303,9 @@ export function DepositFlow() {
               {active.asset} · {active.network}
             </p>
             <p className="mt-2 font-mono text-2xl font-bold text-[var(--text)]">{cryptoLabel(active.requestedCrypto, active.asset)}</p>
-            <p className="mt-1 text-sm text-[var(--muted)]">Credit {usd(active.amountUsd)}</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              {isFeeDepositNote(active.note) ? `Fee ${usd(active.amountUsd)}` : `Credit ${usd(active.amountUsd)}`}
+            </p>
           </div>
 
           <div className="grid gap-2">
@@ -285,7 +332,7 @@ export function DepositFlow() {
 
       {message && <Notice tone={tone}>{message}</Notice>}
 
-      {deposits.length > 0 && (
+      {!feeMode && deposits.length > 0 && (
         <Panel className="overflow-hidden">
           <div className="border-b border-[var(--line)] px-5 py-3">
             <p className="text-sm font-bold text-[var(--text)]">Recent deposit requests</p>
@@ -296,6 +343,7 @@ export function DepositFlow() {
                 <div>
                   <p className="font-semibold capitalize text-[var(--text)]">{item.status.replaceAll("_", " ")}</p>
                   <p className="text-xs text-[var(--muted)]">
+                    {isFeeDepositNote(item.note) ? "Fee payment · " : ""}
                     {item.asset}/{item.network} · {formatTime(item.createdAt)}
                   </p>
                 </div>
