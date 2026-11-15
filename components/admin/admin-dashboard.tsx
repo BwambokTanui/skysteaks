@@ -26,10 +26,22 @@ type Overview = {
   tickets: { id: string; userId: string; stake: number; totalOdds: number; potentialPayout: number; status: string; createdAt: string }[]
   liveEvents: number
   history: { roundNumber: number; crashPoint: number; forced: boolean; status: string }[]
+  deposits: {
+    id: string
+    username?: string
+    amountUsd: number
+    requestedCrypto: number
+    asset: string
+    network: string
+    address: string
+    status: string
+    createdAt: string
+    userConfirmedAt: string | null
+  }[]
 }
 
 export function AdminDashboard({ initial }: { initial: Overview }) {
-  const [data, setData] = useState(initial)
+  const [data, setData] = useState({ ...initial, deposits: initial.deposits ?? [] })
   const [crashInput, setCrashInput] = useState(String(initial.round?.crashPoint ?? "2.00"))
   const [nextInput, setNextInput] = useState(initial.nextCrashPoint != null ? String(initial.nextCrashPoint) : "1.50")
   const [message, setMessage] = useState<string | null>(null)
@@ -113,7 +125,30 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
     }
   }
 
+  async function reviewDeposit(depositId: string, action: "approve" | "reject") {
+    setPending(true)
+    setMessage(null)
+    try {
+      const response = await fetch("/api/admin/deposits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, depositId }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.message || "Could not update deposit")
+      setTone("info")
+      setMessage(action === "approve" ? "Deposit approved and balance credited." : "Deposit rejected.")
+      await refresh()
+    } catch (caught) {
+      setTone("error")
+      setMessage(caught instanceof Error ? caught.message : "Could not update deposit")
+    } finally {
+      setPending(false)
+    }
+  }
+
   const round = data.round
+  const pendingDeposits = (data.deposits ?? []).filter((item) => item.status === "awaiting_confirmation" || item.status === "processing")
 
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-4 px-3 py-6">
@@ -189,6 +224,61 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
           </div>
         </Panel>
       </div>
+
+      <Panel className="grid gap-3 p-5">
+        <div>
+          <h2 className="text-lg font-bold">Crypto deposits</h2>
+          <p className="text-sm text-[var(--muted)]">Approve only after the user taps “I’ve sent it” and you see the transfer.</p>
+        </div>
+        {pendingDeposits.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">No open deposit requests.</p>
+        ) : (
+          <div className="grid gap-2">
+            {pendingDeposits.map((item) => (
+              <div key={item.id} className="grid gap-2 rounded-2xl bg-[var(--bg-elevated)] p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-[var(--text)]">{item.username ?? "pilot"} · {money(item.amountUsd)}</p>
+                    <p className="font-mono text-xs text-[var(--muted)]">
+                      {item.requestedCrypto} {item.asset} · {item.network}
+                    </p>
+                    <p className="mt-1 break-all font-mono text-[11px] text-[var(--muted)]">{item.address}</p>
+                    <p className="mt-1 text-xs capitalize text-[var(--muted)]">{item.status.replaceAll("_", " ")}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      disabled={pending || item.status !== "awaiting_confirmation"}
+                      onClick={() => void reviewDeposit(item.id, "approve")}
+                    >
+                      Approve
+                    </Button>
+                    <Button type="button" variant="ghost" disabled={pending} onClick={() => void reviewDeposit(item.id, "reject")}>
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {(data.deposits ?? []).filter((item) => item.status === "approved" || item.status === "rejected").slice(0, 8).length > 0 && (
+          <div className="grid gap-1 border-t border-[var(--line)] pt-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Recent reviewed</p>
+            {(data.deposits ?? [])
+              .filter((item) => item.status === "approved" || item.status === "rejected")
+              .slice(0, 8)
+              .map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span>
+                    {item.username ?? "pilot"} · {money(item.amountUsd)}
+                  </span>
+                  <span className="capitalize text-[var(--muted)]">{item.status}</span>
+                </div>
+              ))}
+          </div>
+        )}
+      </Panel>
 
       <Panel className="grid gap-3 p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
