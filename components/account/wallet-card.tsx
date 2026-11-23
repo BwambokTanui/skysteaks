@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useBalance } from "@/components/layout/balance"
+import { buttonClasses } from "@/components/ui/button"
 import { Panel } from "@/components/ui/panel"
 import { usd } from "@/lib/format"
 
@@ -18,22 +19,13 @@ export function WalletCard() {
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Link
-          href="/wallet?tab=deposit"
-          className="inline-flex h-11 items-center rounded-2xl bg-[var(--sporty)] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(227,27,35,0.28)]"
-        >
+        <Link href="/wallet?tab=deposit" className={buttonClasses("primary", "md")}>
           Deposit
         </Link>
-        <Link
-          href="/wallet?tab=withdraw"
-          className="inline-flex h-11 items-center rounded-2xl bg-[var(--bg-elevated)] px-4 text-sm font-semibold text-[var(--text)]"
-        >
+        <Link href="/wallet?tab=withdraw" className={buttonClasses("ghost", "md")}>
           Withdraw
         </Link>
-        <Link
-          href="/wallet/history"
-          className="inline-flex h-11 items-center rounded-2xl bg-[var(--bg-elevated)] px-4 text-sm font-semibold text-[var(--text)]"
-        >
+        <Link href="/wallet/history" className={buttonClasses("ghost", "md")}>
           History
         </Link>
       </div>

@@ -1,13 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useState } from "react"
+import { SignOutButton } from "@/components/auth/sign-out-button"
 import { AdminDrawer } from "@/components/layout/admin-drawer"
 import { useBalance } from "@/components/layout/balance"
 import { cn } from "@/lib/cn"
 import { usd } from "@/lib/format"
-import { createClient } from "@/lib/supabase/client"
 
 export function SiteHeader({
   configured,
@@ -22,25 +22,13 @@ export function SiteHeader({
 }) {
   const path = usePathname() ?? ""
   const search = useSearchParams()
-  const router = useRouter()
-  const { balance, setBalance } = useBalance()
-  const [pending, setPending] = useState(false)
+  const { balance } = useBalance()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const signedIn = Boolean(email || username)
   const hide = path.startsWith("/aviator")
 
   if (hide) return null
 
-  async function signOut() {
-    if (!configured) return
-    setPending(true)
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    setBalance(null)
-    setPending(false)
-    router.replace("/")
-    router.refresh()
-  }
 
   const categories = [
     { href: "/games", label: "Games", active: path === "/games" },
@@ -90,16 +78,12 @@ export function SiteHeader({
             ) : (
               <Link
                 href="/login"
-                className="rounded-full border border-[var(--sporty)] px-3.5 py-1.5 text-sm font-semibold text-[var(--sporty)]"
+                className="inline-flex h-9 cursor-pointer items-center rounded-full bg-[var(--sporty)] px-3.5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(227,27,35,0.28)]"
               >
                 Log in
               </Link>
             )}
-            {signedIn && (
-              <button type="button" onClick={signOut} disabled={pending} className="text-xs text-[var(--muted)] disabled:opacity-50">
-                Out
-              </button>
-            )}
+            {signedIn && <SignOutButton configured={configured} size="sm" label="Log out" />}
           </div>
         </div>
 

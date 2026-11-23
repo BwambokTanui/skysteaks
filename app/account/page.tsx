@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { WalletCard } from "@/components/account/wallet-card"
+import { SignOutButton } from "@/components/auth/sign-out-button"
 import { Panel } from "@/components/ui/panel"
 import { getSessionContext } from "@/lib/auth"
 
@@ -46,6 +47,8 @@ export default async function AccountPage() {
           </Link>
         </div>
       </Panel>
+
+      <SignOutButton configured={session.configured} variant="danger" size="lg" className="w-full" />
     </div>
   )
 }

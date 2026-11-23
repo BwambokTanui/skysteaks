@@ -9,7 +9,8 @@ const variants = {
 }
 
 const sizes = {
-  md: "h-11 px-4 text-sm",
+  sm: "h-9 px-3 text-xs font-semibold",
+  md: "h-11 px-4 text-sm font-semibold",
   lg: "h-14 px-5 text-base font-semibold",
 }
 
@@ -18,7 +19,7 @@ type Size = keyof typeof sizes
 
 export function buttonClasses(variant: Variant = "primary", size: Size = "md", className?: string) {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-2xl transition disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-0 transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50",
     variants[variant],
     sizes[size],
     className,

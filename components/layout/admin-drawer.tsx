@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect } from "react"
+import { SignOutButton } from "@/components/auth/sign-out-button"
 import { cn } from "@/lib/cn"
 
 const links = [
@@ -106,7 +107,7 @@ export function AdminDrawer({
           })}
         </nav>
 
-        <div className="border-t border-[var(--line)] p-3">
+        <div className="grid gap-2 border-t border-[var(--line)] p-3">
           <Link
             href="/admin"
             onClick={onClose}
@@ -114,6 +115,7 @@ export function AdminDrawer({
           >
             Open control center
           </Link>
+          <SignOutButton variant="danger" className="w-full" />
         </div>
       </aside>
     </>

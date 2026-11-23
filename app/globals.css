@@ -46,6 +46,14 @@ input {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 ::selection {
   background: rgba(227, 27, 35, 0.18);
 }
