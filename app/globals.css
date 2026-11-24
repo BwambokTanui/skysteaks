@@ -24,6 +24,19 @@
   --betslip-ink: #111827;
   --shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.1);
+  --page-gutter: 1rem;
+  --page-y: 1.5rem;
+  --space-section: 1.25rem;
+  --space-panel: 1.25rem;
+  --space-stack: 1rem;
+  --nav-height: 3.5rem;
+}
+
+@media (min-width: 480px) {
+  :root {
+    --page-gutter: 1.25rem;
+    --page-y: 1.75rem;
+  }
 }
 
 * {

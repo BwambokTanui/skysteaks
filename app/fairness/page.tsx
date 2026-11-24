@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
 import { Verifier } from "@/components/fairness/verifier"
+import { Page } from "@/components/ui/page"
 
 export const metadata: Metadata = { title: "Fairness" }
 
 export default function FairnessPage() {
   return (
-    <div className="mx-auto grid w-full max-w-lg gap-6 px-3 py-6">
+    <Page>
       <div>
         <p className="text-xs font-semibold tracking-[0.22em] text-[var(--sporty)]">PROVABLY FAIR</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--text)]">How a round is decided</h1>
@@ -16,6 +17,6 @@ export default function FairnessPage() {
         </div>
       </div>
       <Verifier />
-    </div>
+    </Page>
   )
 }

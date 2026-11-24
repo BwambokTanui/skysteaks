@@ -1,8 +1,22 @@
 import { cn } from "@/lib/cn"
 
-export function Panel({ className, children }: { className?: string; children: React.ReactNode }) {
+export function Panel({
+  className,
+  padded = false,
+  children,
+}: {
+  className?: string
+  padded?: boolean
+  children: React.ReactNode
+}) {
   return (
-    <section className={cn("rounded-[24px] border border-[var(--line)] bg-white shadow-[var(--shadow)]", className)}>
+    <section
+      className={cn(
+        "rounded-[24px] border border-[var(--line)] bg-white shadow-[var(--shadow)]",
+        padded && "p-[var(--space-panel)]",
+        className,
+      )}
+    >
       {children}
     </section>
   )

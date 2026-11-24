@@ -29,7 +29,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-white pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto flex h-14 max-w-lg items-stretch justify-between px-1">
+      <div className="mx-auto flex h-[var(--nav-height)] max-w-lg items-stretch justify-between px-[var(--page-gutter)]">
         {items.map((item) => {
           const active = current === item.id
           return (

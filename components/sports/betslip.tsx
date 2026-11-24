@@ -68,7 +68,7 @@ export function BetslipDock() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-3 z-[70] grid h-14 w-14 place-items-center rounded-full bg-[var(--betslip)] text-[var(--betslip-ink)] shadow-[0_12px_28px_rgba(234,179,8,0.45)] transition active:scale-95 lg:bottom-6"
+          className="fixed bottom-[calc(var(--nav-height)+1.25rem+env(safe-area-inset-bottom))] right-[var(--page-gutter)] z-[70] grid h-14 w-14 place-items-center rounded-full bg-[var(--betslip)] text-[var(--betslip-ink)] shadow-[0_12px_28px_rgba(234,179,8,0.45)] transition active:scale-95 lg:bottom-6"
           aria-label={`Open betslip, ${items.length} selection${items.length === 1 ? "" : "s"}`}
         >
           <span className="relative grid h-full w-full place-items-center">
@@ -90,7 +90,7 @@ export function BetslipDock() {
 
       <aside
         className={cn(
-          "fixed inset-x-0 bottom-0 z-[90] max-h-[min(85vh,720px)] overflow-auto rounded-t-[28px] border border-[var(--line)] bg-white p-4 pb-[calc(18px+env(safe-area-inset-bottom))] shadow-[0_-16px_50px_rgba(15,23,42,0.18)] transition duration-300 lg:inset-x-auto lg:bottom-6 lg:right-6 lg:w-[380px] lg:rounded-[24px]",
+          "fixed inset-x-0 bottom-0 z-[90] max-h-[min(85vh,720px)] overflow-auto rounded-t-[28px] border border-[var(--line)] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-16px_50px_rgba(15,23,42,0.18)] transition duration-300 lg:inset-x-auto lg:bottom-6 lg:right-6 lg:w-[380px] lg:rounded-[24px]",
           open ? "translate-y-0" : "translate-y-[110%] lg:translate-y-[120%]",
         )}
       >

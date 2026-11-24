@@ -3,6 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { WalletCard } from "@/components/account/wallet-card"
 import { SignOutButton } from "@/components/auth/sign-out-button"
+import { Page } from "@/components/ui/page"
 import { Panel } from "@/components/ui/panel"
 import { getSessionContext } from "@/lib/auth"
 
@@ -14,7 +15,7 @@ export default async function AccountPage() {
   if (!session.user) redirect("/login")
 
   return (
-    <div className="mx-auto grid w-full max-w-lg gap-4 px-3 py-6">
+    <Page>
       <div>
         <p className="text-[11px] font-semibold tracking-[0.2em] text-[var(--sporty)]">ACCOUNT</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text)]">{session.profile?.username ?? "Pilot"}</h1>
@@ -49,6 +50,6 @@ export default async function AccountPage() {
       </Panel>
 
       <SignOutButton configured={session.configured} variant="danger" size="lg" className="w-full" />
-    </div>
+    </Page>
   )
 }

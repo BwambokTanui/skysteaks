@@ -13,14 +13,14 @@ export function MatchRow({ event }: { event: SportsEvent }) {
     <article className="overflow-hidden rounded-[22px] border border-[var(--line)] bg-white shadow-[var(--shadow)]">
       <div className="flex">
         <span className="w-1.5 shrink-0 bg-[var(--sporty)]" aria-hidden />
-        <div className="min-w-0 flex-1 p-3.5">
+        <div className="min-w-0 flex-1 p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                 {event.leagueName}
                 {!live && <span> · {formatKickoff(event.kickoffAt)}</span>}
               </p>
-              <div className="mt-2.5 grid gap-1.5">
+              <div className="mt-3 grid gap-1.5">
                 <TeamLine name={event.homeTeam} score={live ? event.homeScore ?? 0 : null} emphasize={live && (event.homeScore ?? 0) >= (event.awayScore ?? 0)} />
                 <TeamLine name={event.awayTeam} score={live ? event.awayScore ?? 0 : null} emphasize={live && (event.awayScore ?? 0) > (event.homeScore ?? 0)} />
               </div>
@@ -39,7 +39,7 @@ export function MatchRow({ event }: { event: SportsEvent }) {
             </div>
           </div>
 
-          <div className={`mt-3 grid gap-2 ${selections.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+          <div className={`mt-3.5 grid gap-2 ${selections.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
             {selections.map((selection) => (
               <OddsButton
                 key={selection.id}

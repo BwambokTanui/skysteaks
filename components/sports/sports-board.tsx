@@ -6,6 +6,7 @@ import { MatchRow } from "@/components/sports/match-row"
 import { useSportsCatalog } from "@/components/sports/use-sports-catalog"
 import { SetupNotice } from "@/components/game/setup-notice"
 import { Notice } from "@/components/ui/notice"
+import { pageClasses } from "@/components/ui/page"
 import { cn } from "@/lib/cn"
 import type { SportsCatalog } from "@/lib/sports/types"
 
@@ -57,7 +58,7 @@ export function SportsBoard({
 
   if (!catalog && (code === "config" || code === "schema")) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
+      <div className={pageClasses({ width: "lg", className: "py-10" })}>
         <SetupNotice message={error} />
       </div>
     )
@@ -79,10 +80,10 @@ export function SportsBoard({
   const tomorrow = tomorrowISO()
 
   return (
-    <div className="relative mx-auto grid w-full max-w-lg gap-4 px-3 py-4">
+    <div className={pageClasses({ tight: true, className: "relative" })}>
       {hero}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <QuickCard href="/?live=1" label="Live" count={counts.live} hot active={Boolean(live) && !league && !sport && !day} />
         <QuickCard href="/?sport=football" label="Football" count={counts.football} active={sport === "football" && !live && !league && !day} />
         <QuickCard
@@ -137,19 +138,19 @@ export function SportsBoard({
       {error && code !== "config" && code !== "schema" && <Notice>{error}</Notice>}
 
       {grouped.length === 0 && (
-        <div className="rounded-[24px] border border-[var(--line)] bg-white p-6 text-sm text-[var(--muted)] shadow-[var(--shadow)]">
+        <div className="rounded-[24px] border border-[var(--line)] bg-white p-5 text-sm leading-6 text-[var(--muted)] shadow-[var(--shadow)]">
           No matches in this filter right now.
         </div>
       )}
 
       {grouped.map(([leagueName, leagueEvents]) => (
-        <section key={leagueName} className="grid gap-2.5">
+        <section key={leagueName} className="grid gap-3">
           <div className="flex items-center gap-2 px-0.5">
             <span className="h-4 w-1 rounded-full bg-[var(--sporty)]" />
             <h2 className="text-sm font-bold tracking-wide text-[var(--text)]">{leagueName}</h2>
             <span className="text-xs text-[var(--muted)]">{leagueEvents.length}</span>
           </div>
-          <div className="grid gap-3">
+          <div className="grid gap-3.5">
             {leagueEvents.map((event) => (
               <MatchRow key={event.id} event={event} />
             ))}
@@ -177,7 +178,7 @@ function QuickCard({
     <Link
       href={href}
       className={cn(
-        "rounded-2xl border px-3 py-3 shadow-[var(--shadow)] transition",
+        "rounded-2xl border px-3.5 py-3.5 shadow-[var(--shadow)] transition",
         active && "border-[var(--sporty)] bg-[var(--sporty)] text-white",
         !active && hot && "border-[#ffd0d4] bg-[#fff5f6] text-[var(--sporty)]",
         !active && !hot && "border-[var(--line)] bg-white text-[var(--text)]",

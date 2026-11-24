@@ -1,9 +1,10 @@
 import Link from "next/link"
+import { Page } from "@/components/ui/page"
 import { PlaneIcon } from "@/components/ui/plane-icon"
 
 export function GamesLobby() {
   return (
-    <div className="mx-auto grid w-full max-w-lg gap-5 px-3 py-4">
+    <Page tight>
       <header>
         <p className="text-[11px] font-semibold tracking-[0.2em] text-[var(--sporty)]">GAMES</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--text)]">Crash</h1>
@@ -35,6 +36,6 @@ export function GamesLobby() {
           </div>
         </div>
       </Link>
-    </div>
+    </Page>
   )
 }

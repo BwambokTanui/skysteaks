@@ -10,7 +10,7 @@ export function WalletCard() {
   const { balance } = useBalance()
 
   return (
-    <Panel className="grid gap-4 p-5">
+    <Panel padded className="grid gap-4">
       <div>
         <p className="text-sm text-[var(--muted)]">USD play credits</p>
         <p className="mt-2 font-mono text-4xl">{balance == null ? "USD —" : usd(balance)}</p>

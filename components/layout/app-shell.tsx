@@ -29,7 +29,15 @@ export function AppShell({
       <Suspense fallback={null}>
         <SiteHeader configured={configured} email={email} username={username} isAdmin={isAdmin} />
       </Suspense>
-      <main className={cn("flex-1", !aviator && !admin && "pb-[calc(56px+env(safe-area-inset-bottom))]")}>{children}</main>
+      <main
+        className={cn(
+          "flex-1",
+          !aviator && !admin && "pb-[calc(var(--nav-height)+1rem+env(safe-area-inset-bottom))]",
+          admin && "pb-6",
+        )}
+      >
+        {children}
+      </main>
       {!admin && <BottomNav />}
       {!aviator && !admin && <BetslipDock />}
     </>

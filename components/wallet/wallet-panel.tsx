@@ -8,6 +8,7 @@ import { DepositFlow } from "@/components/wallet/deposit-flow"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Notice } from "@/components/ui/notice"
+import { Page } from "@/components/ui/page"
 import { Panel } from "@/components/ui/panel"
 import { cn } from "@/lib/cn"
 import { formatTime, usd } from "@/lib/format"
@@ -123,7 +124,7 @@ export function WalletPanel({
 
   if ((commissionWithdrawalId || escrowWithdrawalId) && feeMode) {
     return (
-      <div className="mx-auto grid w-full max-w-lg gap-4 px-3 py-6">
+      <Page>
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.18em] text-[var(--sporty)]">FEE PAYMENT</p>
@@ -136,12 +137,12 @@ export function WalletPanel({
           </Link>
         </div>
         <DepositFlow feeMode={feeMode} />
-      </div>
+      </Page>
     )
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-lg gap-4 px-3 py-6">
+    <Page>
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold tracking-[0.18em] text-[var(--sporty)]">WALLET</p>
@@ -275,6 +276,6 @@ export function WalletPanel({
       <Link href="/wallet/history" className="text-center text-sm font-semibold text-[var(--sporty)]">
         View deposit & withdrawal history
       </Link>
-    </div>
+    </Page>
   )
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Notice } from "@/components/ui/notice"
+import { Page } from "@/components/ui/page"
 import { Panel } from "@/components/ui/panel"
 import { isFeeDepositNote } from "@/lib/fees"
 import { money } from "@/lib/format"
@@ -225,7 +226,7 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
   )
 
   return (
-    <div className="mx-auto grid w-full max-w-5xl gap-4 px-3 py-6">
+    <Page width="lg">
       <div>
         <p className="text-[11px] font-semibold tracking-[0.2em] text-[var(--sporty)]">ADMIN</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text)]">Control center</h1>
@@ -548,6 +549,6 @@ export function AdminDashboard({ initial }: { initial: Overview }) {
           </div>
         )}
       </Panel>
-    </div>
+    </Page>
   )
 }

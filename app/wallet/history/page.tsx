@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { Page } from "@/components/ui/page"
 import { Panel } from "@/components/ui/panel"
 import { getSessionContext } from "@/lib/auth"
 import { formatTime, usd } from "@/lib/format"
@@ -30,7 +31,7 @@ export default async function WalletHistoryPage() {
   const rows = (data ?? []) as LedgerRow[]
 
   return (
-    <div className="mx-auto grid w-full max-w-lg gap-4 px-3 py-6">
+    <Page>
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold tracking-[0.18em] text-[var(--sporty)]">HISTORY</p>
@@ -68,6 +69,6 @@ export default async function WalletHistoryPage() {
       <Link href="/aviator" className="text-center text-sm font-semibold text-[var(--sporty)]">
         Back to Aviator
       </Link>
-    </div>
+    </Page>
   )
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { BetsHistory } from "@/components/bets/bets-history"
+import { Page } from "@/components/ui/page"
 import { getSessionContext } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { loadUserTickets } from "@/lib/sports/server"
@@ -48,7 +49,7 @@ export default async function BetsPage() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-lg gap-4 px-3 py-6">
+    <Page>
       <div>
         <p className="text-[11px] font-semibold tracking-[0.2em] text-[var(--sporty)]">HISTORY</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--text)]">My bets</h1>
@@ -61,6 +62,6 @@ export default async function BetsPage() {
         aviatorBets={aviatorBets}
         aviatorError={error ? "Aviator bet history is unavailable right now." : null}
       />
-    </div>
+    </Page>
   )
 }
